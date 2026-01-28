@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Environnement
+.env
+venv/
+env/
+ENV/
+
+# Logs
+logs/
+*.log
+
+# Airflow
+airflow.db
+airflow.cfg
+
+# Uploads et données temporaires
+uploads/*
+!uploads/.gitkeep
+data/*.xlsx
+data/*.json
+data/history.json
+data/report_*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker
+.dockerignore
+
+# Fichiers temporaires
+*.tmp
+*.temp
+temp/
