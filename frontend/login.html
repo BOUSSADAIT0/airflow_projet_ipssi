@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>Connexion - OCR Intelligent</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -92,7 +93,7 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:8000/api';
+        const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8000/api' : ('http://' + window.location.hostname + ':8000/api');
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -136,7 +137,8 @@
                 }
             } catch (error) {
                 console.error('Erreur:', error);
-                showAlert('Erreur de connexion au serveur. Assurez-vous que le backend est démarré.', 'error');
+                const msg = error.message || String(error);
+                showAlert('Erreur de connexion au serveur. Assurez-vous que le backend est démarré. (Détail: ' + msg + ')', 'error');
                 loginButton.disabled = false;
                 loginButton.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Se connecter';
             }

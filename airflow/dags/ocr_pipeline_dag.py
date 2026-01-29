@@ -95,6 +95,19 @@ def _process_one_file(file_path: str, token: str) -> dict:
 
 def _poke_wait_for_file() -> bool:
     """Retourne True dès qu'au moins un fichier (PDF/image) est présent dans l'inbox."""
+    inbox = Path(OCR_INBOX_PATH)
+    if not inbox.exists():
+        logger.warning("Dossier inbox inexistant : %s (vérifiez le volume monté)", OCR_INBOX_PATH)
+        return False
+    # Debug : lister le contenu du dossier (pour voir si le volume est le bon)
+    try:
+        all_items = list(inbox.rglob("*"))
+        dirs = [p for p in all_items if p.is_dir()]
+        any_files = [p for p in all_items if p.is_file()]
+        logger.info("Inbox %s : %s sous-dossiers, %s fichiers (tous types). Fichiers éligibles : %s",
+                    OCR_INBOX_PATH, len(dirs), len(any_files), _list_pending_files())
+    except Exception as e:
+        logger.warning("Impossible de lister l'inbox : %s", e)
     files = _list_pending_files()
     if files:
         logger.info("Fichier(s) détecté(s) dans %s : %s", OCR_INBOX_PATH, files)

@@ -1,0 +1,140 @@
+# Stack Docker Swarm + Traefik
+# Déploiement : docker stack deploy -c docker-compose.swarm.yml ocr
+# Prérequis : docker swarm init  et  images buildées (voir DEPLOY-SWARM.md)
+# Avec Traefik : tout sur un seul domaine (optionnel DOMAIN pour HTTPS)
+#   /        -> frontend   |   /api     -> backend   |   /airflow  -> Airflow
+
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:v3.0
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.swarmMode=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8081:8080"   # Dashboard Traefik (optionnel)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - ocr-network
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+      labels:
+        # Dashboard Traefik uniquement sur port 8081 (pas exposé sur 80)
+        - "traefik.enable=true"
+
+  backend:
+    image: ocr-backend:latest
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SECRET_KEY=${SECRET_KEY:-ocr-intelligent-secret-key-2024-production}
+    volumes:
+      - backend_uploads:/app/uploads
+      - backend_results:/app/results
+      - backend_exports:/app/exports
+    networks:
+      - ocr-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.backend.rule=PathPrefix(`/api`)"
+        - "traefik.http.routers.backend.entrypoints=web"
+        - "traefik.http.services.backend.loadbalancer.server.port=8000"
+
+  frontend:
+    image: ocr-frontend:latest
+    networks:
+      - ocr-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+        - "traefik.http.routers.frontend.entrypoints=web"
+        - "traefik.http.services.frontend.loadbalancer.server.port=80"
+        # Priorité plus basse pour que /api et /airflow passent avant
+        - "traefik.http.routers.frontend.priority=1"
+
+  airflow-db:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      interval: 5s
+      retries: 5
+    networks:
+      - ocr-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  airflow:
+    image: apache/airflow:2.7.3-python3.11
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+      # URL publique (remplacer par votre domaine ou IP)
+      AIRFLOW__WEBSERVER__BASE_URL: http://${DOMAIN:-localhost}/airflow
+      AIRFLOW__WEBSERVER__WEB_SERVER_HOST: 0.0.0.0
+      AIRFLOW__WEBSERVER__WEB_SERVER_MASTER_TIMEOUT: "300"
+      AIRFLOW__WEBSERVER__WEB_SERVER_WORKER_TIMEOUT: "300"
+      AIRFLOW__WEBSERVER__WORKERS: "2"
+      AIRFLOW_UID: "0"
+      OCR_API_URL: http://backend:8000
+      OCR_INBOX_PATH: /opt/airflow/inbox
+      OCR_USERNAME: ${OCR_USERNAME:-}
+      OCR_PASSWORD: ${OCR_PASSWORD:-}
+    volumes:
+      - airflow_dags:/opt/airflow/dags
+      - backend_uploads:/opt/airflow/inbox
+      - airflow_logs:/opt/airflow/logs
+    networks:
+      - ocr-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.airflow.rule=PathPrefix(`/airflow`)"
+        - "traefik.http.routers.airflow.entrypoints=web"
+        - "traefik.http.routers.airflow.middlewares=airflow-strip"
+        - "traefik.http.middlewares.airflow-strip.stripprefix.prefixes=/airflow"
+        - "traefik.http.services.airflow.loadbalancer.server.port=8080"
+    command: airflow standalone
+
+networks:
+  ocr-network:
+    driver: overlay
+
+volumes:
+  backend_uploads:
+  backend_results:
+  backend_exports:
+  airflow_postgres_data:
+  airflow_logs:
+  airflow_dags:

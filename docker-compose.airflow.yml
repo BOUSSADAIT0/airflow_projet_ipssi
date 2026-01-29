@@ -13,10 +13,6 @@ services:
       POSTGRES_DB: airflow
     volumes:
       - airflow_postgres_data:/var/lib/postgresql/data
-      - ./airflow/docker-entrypoint-postgres.sh:/docker-entrypoint-postgres.sh:ro
-      - ./airflow/init-pg-hba.sh:/docker-entrypoint-initdb.d/01-init-pg-hba.sh:ro
-    entrypoint: ["/bin/sh", "/docker-entrypoint-postgres.sh"]
-    command: ["postgres"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U airflow"]
       interval: 5s
@@ -54,8 +50,8 @@ services:
       OCR_API_URL: http://backend:8000
       # Inbox = même dossier que les uploads de l'app (dès qu'un fichier est déposé, le sensor le voit)
       OCR_INBOX_PATH: /opt/airflow/inbox
-      OCR_USERNAME: admin
-      OCR_PASSWORD: admin
+      OCR_USERNAME: aitdjoudi@gmail.com
+      OCR_PASSWORD: boussad
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       # Partagé avec le backend : les fichiers uploadés dans l'app sont vus par Airflow

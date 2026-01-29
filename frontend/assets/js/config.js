@@ -1,6 +1,9 @@
 // config.js - Version mise à jour
+// localhost -> backend sur :8000 ; accès par IP (ex. 172.20.10.11) -> backend sur IP:8000
 const CONFIG = {
-    API_BASE_URL: 'http://localhost:8000',
+    API_BASE_URL: (typeof window !== 'undefined' && window.location && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+        ? 'http://localhost:8000'
+        : ('http://' + (window.location && window.location.hostname ? window.location.hostname : 'localhost') + ':8000'),
     ENDPOINTS: {
         AUTH: {
             LOGIN: '/api/auth/login',

@@ -1,6 +1,9 @@
-// Configuration de l'API
+// Configuration de l'API (même logique que config.js pour accès par IP)
 const API_CONFIG = {
-    BASE_URL: 'http://localhost:8000',
+    get BASE_URL() {
+        const h = typeof window !== 'undefined' && window.location && window.location.hostname;
+        return (h === 'localhost' || h === '127.0.0.1') ? 'http://localhost:8000' : ('http://' + (h || 'localhost') + ':8000');
+    },
     get LOGIN_URL() { return `${this.BASE_URL}/api/auth/login`; },
     get REGISTER_URL() { return `${this.BASE_URL}/api/auth/register`; },
     get ME_URL() { return `${this.BASE_URL}/api/auth/me`; },
@@ -163,7 +166,7 @@ async function testBackendConnection() {
     
     try {
         // Vérifier si le serveur est en ligne via /health (plus léger que /docs)
-        const healthResponse = await fetch('http://localhost:8000/health');
+        const healthResponse = await fetch(API_CONFIG.BASE_URL + '/health');
         if (!healthResponse.ok) {
             console.error('❌ Serveur backend non accessible');
             return false;

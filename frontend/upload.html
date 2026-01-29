@@ -146,7 +146,7 @@
     </main>
 
     <script>
-        const API_URL = 'http://localhost:8000/api';
+        const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8000/api' : ('http://' + window.location.hostname + ':8000/api');
         let authToken = localStorage.getItem('ocr_token');
         let currentFile = null;
         let currentProcessId = null;
@@ -172,7 +172,7 @@
 
         dropZone.addEventListener('drop', (e) => handleFile(e.dataTransfer.files[0]));
 
-        function handleFile(file) {
+        async function handleFile(file) {
             if (!file) return;
 
             const maxSize = 10 * 1024 * 1024;
@@ -185,6 +185,10 @@
             document.getElementById('fileInfo').classList.remove('hidden');
             document.getElementById('fileName').textContent = file.name;
             document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            document.getElementById('processBtn').disabled = true;
+
+            // Envoi direct au backend dès la sélection (sans cliquer sur "Traiter le document")
+            await processDocument();
             document.getElementById('processBtn').disabled = false;
         }
 
@@ -202,6 +206,14 @@
         async function processDocument() {
             if (!currentFile) return;
 
+            // Vérifier le token avant d'envoyer (évite 401)
+            let token = localStorage.getItem('ocr_token');
+            if (!token) {
+                showError('Session expirée. Redirection vers la connexion...');
+                setTimeout(() => { window.location.href = 'login.html'; }, 1500);
+                return;
+            }
+
             document.getElementById('loadingSection').classList.remove('hidden');
             document.getElementById('errorSection').classList.add('hidden');
             document.getElementById('resultsSection').classList.add('hidden');
@@ -213,9 +225,17 @@
             try {
                 const response = await fetch(`${API_URL}/ocr/extract`, {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${authToken}` },
+                    headers: { 'Authorization': `Bearer ${token}` },
                     body: formData
                 });
+
+                if (response.status === 401) {
+                    showError('Session expirée (401). Reconnectez-vous.');
+                    localStorage.removeItem('ocr_token');
+                    localStorage.removeItem('ocr_user');
+                    setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+                    return;
+                }
 
                 if (!response.ok) {
                     const error = await response.json();

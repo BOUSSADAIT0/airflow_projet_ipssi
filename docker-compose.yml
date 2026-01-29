@@ -1,3 +1,6 @@
+# Backend + Frontend + Airflow - tout lancer avec : docker-compose up -d
+# Frontend : http://localhost  |  Backend : http://localhost:8000  |  Airflow : http://localhost:8080 (admin / admin)
+
 version: '3.8'
 
 services:
@@ -19,7 +22,7 @@ services:
     networks:
       - ocr-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/auth/login" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -37,6 +40,58 @@ services:
     networks:
       - ocr-network
 
+  airflow-db:
+    image: postgres:13-alpine
+    container_name: ocr-airflow-db
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      interval: 5s
+      retries: 5
+    networks:
+      - ocr-network
+    restart: unless-stopped
+
+  airflow:
+    image: apache/airflow:2.7.3-python3.11
+    container_name: ocr-airflow
+    depends_on:
+      airflow-db:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+      AIRFLOW__WEBSERVER__BASE_URL: http://localhost:8080
+      AIRFLOW__WEBSERVER__WEB_SERVER_HOST: 0.0.0.0
+      AIRFLOW__WEBSERVER__WEB_SERVER_MASTER_TIMEOUT: "300"
+      AIRFLOW__WEBSERVER__WEB_SERVER_WORKER_TIMEOUT: "300"
+      AIRFLOW__WEBSERVER__WORKERS: "2"
+      AIRFLOW_UID: "0"
+      OCR_API_URL: http://backend:8000
+      OCR_INBOX_PATH: /opt/airflow/inbox
+      OCR_USERNAME: aitdjoudi@gmail.com
+      OCR_PASSWORD: boussad
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./backend/uploads:/opt/airflow/inbox
+      - airflow_logs:/opt/airflow/logs
+    ports:
+      - "8080:8080"
+    command: airflow standalone
+    restart: unless-stopped
+    networks:
+      - ocr-network
+
 networks:
   ocr-network:
     driver: bridge
@@ -45,3 +100,5 @@ volumes:
   uploads:
   results:
   exports:
+  airflow_postgres_data:
+  airflow_logs:
