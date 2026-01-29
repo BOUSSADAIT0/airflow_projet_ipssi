@@ -35,6 +35,15 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+      # URL complète du webserver (évite "Request URL is missing http:// or https://" pour les logs)
+      AIRFLOW__WEBSERVER__BASE_URL: http://localhost:8080
+      # Écoute sur toutes les interfaces pour que le port 8080 soit accessible depuis l'hôte
+      AIRFLOW__WEBSERVER__WEB_SERVER_HOST: 0.0.0.0
+      # Délai plus long pour que Gunicorn réponde (évite "No response from gunicorn master within 120 seconds")
+      AIRFLOW__WEBSERVER__WEB_SERVER_MASTER_TIMEOUT: "300"
+      AIRFLOW__WEBSERVER__WEB_SERVER_WORKER_TIMEOUT: "300"
+      # Moins de workers = démarrage plus rapide et moins de RAM (surtout sous Docker)
+      AIRFLOW__WEBSERVER__WORKERS: "2"
       # Sous Windows/WSL : 0 évite les erreurs de permissions sur les volumes
       AIRFLOW_UID: "0"
       # URL de l'API OCR (nom du service backend dans Docker)
