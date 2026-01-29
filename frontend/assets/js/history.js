@@ -16,6 +16,9 @@ async function initPage() {
 
     await loadHistory();
     setupEventListeners();
+
+    // Rafraîchissement auto toutes les 30 s : affiche les nouveaux résultats (ex. traités par Airflow)
+    setInterval(loadHistory, 30000);
 }
 
 async function loadHistory() {
@@ -23,9 +26,9 @@ async function loadHistory() {
         showLoading(true);
         showEmptyState(false);
         
-        // Charger depuis l'API
+        // Charger depuis l'API (réponse { history: [...] } ou tableau)
         const data = await apiService.getHistory();
-        historyData = Array.isArray(data) ? data : [];
+        historyData = (data && data.history) ? data.history : (Array.isArray(data) ? data : []);
         
         // Appliquer les filtres
         applyFilters();

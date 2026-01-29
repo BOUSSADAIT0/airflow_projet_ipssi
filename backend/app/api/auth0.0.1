@@ -39,16 +39,16 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 # Initialiser l'utilisateur démo
 demo_user = {
     "id": 1,
-    "username": "demo",
-    "email": "demo@ocr.com",
-    "full_name": "Utilisateur Démo",
-    "hashed_password": get_password_hash("demo123"),
+    "username": "aitdjoudi@gmail.com",
+    "email": "aitdjoudi@gmail.com",
+    "full_name": "Boussad",
+    "hashed_password": get_password_hash("boussad"),
     "is_active": True,
     "is_superuser": False,
     "created_at": datetime.now(),
     "updated_at": datetime.now()
 }
-users_db["demo"] = demo_user
+users_db["aitdjoudi@gmail.com"] = demo_user
 
 @router.post("/register", response_model=User)
 async def register(user_data: UserCreate):

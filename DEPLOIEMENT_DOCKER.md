@@ -254,7 +254,7 @@ docker-compose up -d
 - [ ] `docker-compose up -d` fonctionne
 - [ ] Backend accessible sur port 8000
 - [ ] Frontend accessible sur port 80
-- [ ] Login fonctionne avec demo/demo123
+- [ ] Login fonctionne avec aitdjoudi@gmail.com / boussad
 - [ ] Upload de fichier fonctionne
 - [ ] Téléchargement JSON/CSV fonctionne
 

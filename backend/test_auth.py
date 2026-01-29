@@ -50,8 +50,8 @@ def test_auth_flow():
     # Test 3: Connexion réussie
     print("\n3. Test connexion réussie...")
     login_data = {
-        "username": "demo",
-        "password": "demo123"
+        "username": "aitdjoudi@gmail.com",
+        "password": "boussad"
     }
     
     try:
@@ -134,8 +134,8 @@ def test_api_endpoints():
     try:
         # D'abord se connecter
         login_response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "username": "demo",
-            "password": "demo123"
+            "username": "aitdjoudi@gmail.com",
+            "password": "boussad"
         })
         
         if login_response.status_code == 200:
@@ -175,8 +175,8 @@ if __name__ == "__main__":
     2. Démarrer le frontend: cd frontend && python start.py
     3. Ouvrir http://localhost:3000
     4. Se connecter avec:
-       - Utilisateur: demo
-       - Mot de passe: demo123
+       - Utilisateur: aitdjoudi@gmail.com
+       - Mot de passe: boussad
     
     Endpoints disponibles:
     - http://localhost:8000/docs (Documentation API)

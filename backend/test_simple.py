@@ -24,8 +24,8 @@ def test_api():
     print("\n2. Test d'authentification...")
     try:
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "username": "demo",
-            "password": "demo123"
+            "username": "aitdjoudi@gmail.com",
+            "password": "boussad"
         })
         
         if response.status_code == 200:
@@ -105,7 +105,7 @@ if __name__ == "__main__":
         print("="*60)
         print("\n📋 Étapes suivantes:")
         print("1. Ouvrez le frontend dans votre navigateur")
-        print("2. Connectez-vous avec: demo / demo123")
+        print("2. Connectez-vous avec: aitdjoudi@gmail.com / boussad")
         print("3. Téléchargez un document (PDF ou image)")
         print("4. Visualisez les résultats extraits")
         print("\n📍 URLs:")

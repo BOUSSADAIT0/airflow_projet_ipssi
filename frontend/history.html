@@ -156,6 +156,8 @@
 
         // Load history on page load
         loadHistory();
+        // Rafraîchissement auto toutes les 30 s : affiche les résultats traités par Airflow (DAG)
+        setInterval(loadHistory, 30000);
 
         async function loadHistory() {
             try {

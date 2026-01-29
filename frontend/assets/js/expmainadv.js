@@ -26,8 +26,8 @@
             }
         },
         DEMO_CREDENTIALS: {
-            USERNAME: 'demo',
-            PASSWORD: 'demo123'
+            USERNAME: 'aitdjoudi@gmail.com',
+            PASSWORD: 'boussad'
         }
     };
 

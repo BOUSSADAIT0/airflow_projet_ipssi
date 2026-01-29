@@ -41,8 +41,8 @@ services:
       OCR_API_URL: http://backend:8000
       # Inbox = même dossier que les uploads de l'app (dès qu'un fichier est déposé, le sensor le voit)
       OCR_INBOX_PATH: /opt/airflow/inbox
-      OCR_USERNAME: demo
-      OCR_PASSWORD: demo123
+      OCR_USERNAME: aitdjoudi@gmail.com
+      OCR_PASSWORD: boussad
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       # Partagé avec le backend : les fichiers uploadés dans l'app sont vus par Airflow

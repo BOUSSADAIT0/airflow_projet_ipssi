@@ -87,13 +87,13 @@ def create_access_token(data: dict):
 # Initialiser les utilisateurs
 demo_user = {
     "id": 1,
-    "username": "demo",
-    "email": "demo@ocr.com",
-    "full_name": "Utilisateur Démo",
-    "hashed_password": get_password_hash("demo123"),
+    "username": "aitdjoudi@gmail.com",
+    "email": "aitdjoudi@gmail.com",
+    "full_name": "Boussad",
+    "hashed_password": get_password_hash("boussad"),
     "is_active": True
 }
-users_db["demo"] = demo_user
+users_db["aitdjoudi@gmail.com"] = demo_user
 
 # Dépendance pour l'authentification
 async def get_current_user(authorization: Optional[str] = Header(None)):
@@ -352,6 +352,13 @@ async def extract_ocr(
         
         if len(content) == 0:
             raise HTTPException(status_code=400, detail="Fichier vide")
+
+        # Sauvegarder une copie dans uploads/ pour que le PythonSensor Airflow puisse le voir (même dossier = backend/uploads)
+        uploads_dir = os.path.join("uploads", "inbox")
+        os.makedirs(uploads_dir, exist_ok=True)
+        safe_name = f"{uuid.uuid4().hex}_{file.filename}"
+        with open(os.path.join(uploads_dir, safe_name), "wb") as f:
+            f.write(content)
         
         all_text = ""
         pages = []
@@ -431,7 +438,7 @@ async def get_results(process_id: str, current_user: User = Depends(get_current_
             result = json.load(f)
         
         # Vérifier que l'utilisateur a accès à ces résultats
-        if result.get("user") != current_user.username and current_user.username != "demo":
+        if result.get("user") != current_user.username and current_user.username != "aitdjoudi@gmail.com":
             raise HTTPException(status_code=403, detail="Accès non autorisé")
         
         return result
@@ -549,13 +556,16 @@ async def get_history(current_user: User = Depends(get_current_user)):
                     result = json.load(f)
                 
                 # Filtrer par utilisateur (sauf pour démo)
-                if current_user.username == "demo" or result.get("user") == current_user.username:
+                if current_user.username == "aitdjoudi@gmail.com" or result.get("user") == current_user.username:
                     history.append({
                         "process_id": file.replace(".json", ""),
                         "filename": result.get("filename", ""),
                         "document_type": result.get("document_type", ""),
                         "date": result.get("processing_date", ""),
-                        "confidence": result.get("average_confidence", 0)
+                        "timestamp": result.get("processing_date", ""),
+                        "confidence": result.get("average_confidence", 0),
+                        "average_confidence": result.get("average_confidence", 0),
+                        "total_pages": len(result.get("pages", [])) or 1
                     })
             except:
                 continue
@@ -583,8 +593,8 @@ async def root():
             "health": "GET /health"
         },
         "demo_credentials": {
-            "username": "demo",
-            "password": "demo123"
+            "username": "aitdjoudi@gmail.com",
+            "password": "boussad"
         }
     }
 
@@ -599,7 +609,7 @@ if __name__ == "__main__":
     print("="*60)
     print("📍 URL: http://localhost:8000")
     print("📄 Docs: http://localhost:8000/docs")
-    print("🔑 Demo: demo / demo123")
+    print("🔑 Demo: aitdjoudi@gmail.com / boussad")
     print("\n🛑 Ctrl+C pour arrêter")
     print("="*60 + "\n")
     

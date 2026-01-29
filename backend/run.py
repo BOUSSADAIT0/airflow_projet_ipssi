@@ -5,7 +5,7 @@ if __name__ == "__main__":
     print("🚀 Démarrage OCR Intelligent API...")
     print("📍 http://localhost:8000")
     print("📄 http://localhost:8000/docs")
-    print("🔑 demo / demo123")
+    print("🔑 aitdjoudi@gmail.com / boussad")
     print("\n🛑 Ctrl+C pour arrêter\n")
     
     uvicorn.run(

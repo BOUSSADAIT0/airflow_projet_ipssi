@@ -31,7 +31,7 @@ def verify_api():
 
     # Login
     print("Logging in...")
-    login_data = {"username": "demo", "password": "demo123"}
+    login_data = {"username": "aitdjoudi@gmail.com", "password": "boussad"}
     r = requests.post('http://localhost:8000/api/auth/login', json=login_data)
     if r.status_code != 200:
         print(f"Login failed: {r.text}")

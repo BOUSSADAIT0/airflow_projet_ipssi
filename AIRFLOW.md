@@ -53,7 +53,7 @@ docker-compose -f docker-compose.yml -f docker-compose.airflow.yml up -d
 
 - Avec Docker, l’**inbox** Airflow est le même dossier que les **uploads** du backend : `./backend/uploads` est monté en `/opt/airflow/inbox`.  
 - Dès qu’un utilisateur envoie un fichier via l’application (frontend), le backend le sauvegarde dans `uploads/` (ou un sous-dossier).  
-- Le DAG tourne **toutes les 5 minutes**. À chaque run, le **PythonSensor** attend qu’au moins un fichier soit présent ; dès qu’un fichier apparaît, le sensor débloque et le reste du pipeline s’exécute (token → liste → traitement par fichier).
+- Le DAG tourne **toutes les 1 minute**. À chaque run, le **PythonSensor** attend qu’au moins un fichier soit présent ; dès qu’un fichier apparaît, le sensor débloque et le reste du pipeline s’exécute (token → liste → traitement par fichier).
 
 ### Dossier inbox (fichiers à traiter)
 
@@ -62,7 +62,7 @@ docker-compose -f docker-compose.yml -f docker-compose.airflow.yml up -d
 
 ### Planification
 
-- Par défaut le DAG est planifié **toutes les 5 minutes** (`schedule_interval=timedelta(minutes=5)`).  
+- Par défaut le DAG est planifié **toutes les 1 minute** (`schedule_interval=timedelta(minutes=1)`).  
 - À chaque run, le sensor attend jusqu’à 1 h qu’un fichier arrive ; dès qu’un fichier est présent, le traitement se lance.  
 - Pour exécution **uniquement manuelle** : dans le DAG, mettre `schedule_interval=None`.
 
@@ -82,8 +82,8 @@ Dans l’interface Airflow : **Admin** → **Variables**, ajouter ou modifier :
 |-------------------|--------------------------------|-------------------------|
 | `ocr_api_url`     | URL de l’API OCR               | `http://backend:8000`    |
 | `ocr_inbox_path`  | Dossier des fichiers à traiter | `/opt/airflow/inbox`    |
-| `ocr_username`   | Utilisateur API OCR            | `demo`                  |
-| `ocr_password`   | Mot de passe API OCR           | `demo123`               |
+| `ocr_username`   | Utilisateur API OCR            | `aitdjoudi@gmail.com`   |
+| `ocr_password`   | Mot de passe API OCR           | `boussad`               |
 
 En local (sans Docker), mettre par exemple `ocr_api_url` = `http://localhost:8000` et un chemin local pour `ocr_inbox_path` si besoin.
 

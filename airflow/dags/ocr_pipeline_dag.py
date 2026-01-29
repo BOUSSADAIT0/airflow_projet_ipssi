@@ -31,8 +31,8 @@ logger = logging.getLogger(__name__)
 
 OCR_API_URL = Variable.get("ocr_api_url", default_var="http://backend:8000")
 OCR_INBOX_PATH = Variable.get("ocr_inbox_path", default_var="/opt/airflow/inbox")
-OCR_USERNAME = Variable.get("ocr_username", default_var="demo")
-OCR_PASSWORD = Variable.get("ocr_password", default_var="demo123")
+OCR_USERNAME = Variable.get("ocr_username", default_var="aitdjoudi@gmail.com")
+OCR_PASSWORD = Variable.get("ocr_password", default_var="boussad")
 
 ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".tif"}
 
@@ -56,13 +56,13 @@ def _get_auth_token() -> str:
 
 
 def _list_pending_files() -> list:
-    """Liste les fichiers à traiter (inbox + sous-dossiers, ex. uploads/documents/, uploads/temp/)."""
+    """Liste les fichiers à traiter (inbox + sous-dossiers), en excluant uploads/processed/."""
     inbox = Path(OCR_INBOX_PATH)
     if not inbox.exists():
         return []
     files = []
     for f in inbox.rglob("*"):
-        if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS:
+        if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS and "processed" not in f.parts:
             files.append(str(f))
     return sorted(files)
 
@@ -75,7 +75,20 @@ def _process_one_file(file_path: str, token: str) -> dict:
         headers = {"Authorization": f"Bearer {token}"}
         resp = requests.post(url, files=files, data=data, headers=headers, timeout=120)
     resp.raise_for_status()
-    return resp.json()
+    out = resp.json()
+    # Déplacer le fichier traité vers processed/ pour ne pas le retraiter au prochain run (fichier fermé ici)
+    p = Path(file_path)
+    processed_dir = Path(OCR_INBOX_PATH) / "processed"
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    dest = processed_dir / p.name
+    if p.exists() and str(dest) != str(p.resolve()):
+        try:
+            import shutil
+            shutil.move(str(p), str(dest))
+            logger.info("Fichier déplacé vers processed/: %s", dest)
+        except Exception as e:
+            logger.warning("Impossible de déplacer vers processed/: %s", e)
+    return out
 
 
 # --- Sensor : attendre qu'au moins un fichier soit présent ---
@@ -139,7 +152,7 @@ with DAG(
     dag_id="ocr_batch_pipeline",
     default_args=default_args,
     description="Traitement des fichiers par l'API OCR : sensor → token → liste → traitement par fichier",
-    schedule_interval=timedelta(minutes=5),  # Toutes les 5 min : dès qu'un fichier est là, le sensor débloque
+    schedule_interval=timedelta(minutes=1),  # Toutes les 1 min : dès qu'un fichier est dans l'inbox, le sensor débloque et le pipeline se lance
     start_date=datetime(2025, 1, 1),
     catchup=False,
     tags=["ocr", "batch", "documents", "file-processing"],

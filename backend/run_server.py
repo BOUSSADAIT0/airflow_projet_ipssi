@@ -14,7 +14,7 @@ if __name__ == "__main__":
     print("🚀 Démarrage du serveur OCR Intelligent...")
     print("📍 URL: http://localhost:8000")
     print("📄 Documentation: http://localhost:8000/docs")
-    print("🔑 Identifiants démo: demo / demo123")
+    print("🔑 Identifiants démo: aitdjoudi@gmail.com / boussad")
     print("\n🛑 Appuyez sur Ctrl+C pour arrêter\n")
     
     uvicorn.run(

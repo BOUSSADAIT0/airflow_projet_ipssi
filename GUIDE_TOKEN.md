@@ -10,8 +10,8 @@ Allez sur : http://localhost:8000/docs
 3. Entrez vos identifiants :
    ```json
    {
-     "username": "demo",
-     "password": "demo123"
+     "username": "aitdjoudi@gmail.com",
+     "password": "boussad"
    }
    ```
 4. Cliquez sur "Execute"
@@ -57,7 +57,7 @@ Vous pouvez maintenant créer des utilisateurs directement depuis :
 
 1. ✅ **Backend** :
    - Ajout d'une route d'inscription `/api/auth/register`
-   - Utilisateur de démo : `demo` / `demo123`
+   - Utilisateur de démo : `aitdjoudi@gmail.com` / `boussad`
    - Création dynamique d'utilisateurs
 
 2. ✅ **Frontend** :
