@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historique - OCR Intelligent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-file-alt text-white text-xl"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-900">OCR Intelligent</h1>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="upload.html"
+                        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-plus mr-2"></i>Nouveau document
+                    </a>
+                    <span id="usernameDisplay" class="text-gray-700 font-medium"></span>
+                    <button onclick="logout()"
+                        class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-900">Historique des documents</h2>
+            <p class="mt-2 text-gray-600">Consultez tous vos documents traités</p>
+        </div>
+
+        <!-- Loading -->
+        <div id="loadingSection" class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+            <p class="text-gray-600">Chargement de l'historique...</p>
+        </div>
+
+        <!-- Error -->
+        <div id="errorSection" class="hidden bg-red-50 border border-red-200 rounded-lg p-6 text-red-800">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            <span id="errorMessage"></span>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptySection" class="hidden bg-white rounded-xl shadow-sm p-12 text-center">
+            <i class="fas fa-folder-open text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">Aucun document traité</h3>
+            <p class="text-gray-500 mb-6">Commencez par traiter votre premier document</p>
+            <a href="upload.html" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+                <i class="fas fa-upload mr-2"></i>Télécharger un document
+            </a>
+        </div>
+
+        <!-- History List -->
+        <div id="historySection" class="hidden">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-file-alt text-blue-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Total documents</p>
+                            <p class="text-2xl font-bold" id="totalDocs">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-id-card text-green-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">CVs</p>
+                            <p class="text-2xl font-bold" id="totalCVs">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-file-invoice text-purple-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Factures</p>
+                            <p class="text-2xl font-bold" id="totalInvoices">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-file text-orange-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Autres</p>
+                            <p class="text-2xl font-bold" id="totalOthers">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents Table -->
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Document</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Confiance</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api';
+        let authToken = localStorage.getItem('ocr_token');
+
+        // Check auth
+        if (!authToken) {
+            window.location.href = 'login.html';
+        }
+
+        // Display username
+        document.getElementById('usernameDisplay').textContent = localStorage.getItem('ocr_user') || 'Utilisateur';
+
+        // Load history on page load
+        loadHistory();
+
+        async function loadHistory() {
+            try {
+                const response = await fetch(`${API_URL}/ocr/history`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erreur de chargement de l\'historique');
+                }
+
+                const data = await response.json();
+                displayHistory(data);
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                document.getElementById('loadingSection').classList.add('hidden');
+            }
+        }
+
+        function displayHistory(data) {
+            const history = data.history || [];
+
+            if (history.length === 0) {
+                document.getElementById('emptySection').classList.remove('hidden');
+                return;
+            }
+
+            // Calculate stats
+            const stats = {
+                total: history.length,
+                cvs: history.filter(h => h.document_type?.toLowerCase() === 'cv').length,
+                invoices: history.filter(h => h.document_type?.toLowerCase() === 'invoice').length,
+                others: 0
+            };
+            stats.others = stats.total - stats.cvs - stats.invoices;
+
+            document.getElementById('totalDocs').textContent = stats.total;
+            document.getElementById('totalCVs').textContent = stats.cvs;
+            document.getElementById('totalInvoices').textContent = stats.invoices;
+            document.getElementById('totalOthers').textContent = stats.others;
+
+            // Display table
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+
+            history.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+
+                const docTypeIcon = getDocTypeIcon(item.document_type);
+                const docTypeColor = getDocTypeColor(item.document_type);
+                const confidence = (item.average_confidence * 100).toFixed(1);
+                const date = new Date(item.timestamp).toLocaleDateString('fr-FR', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <i class="fas ${docTypeIcon} text-${docTypeColor}-600 mr-3"></i>
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">${item.filename || 'Document ' + (index + 1)}</div>
+                                <div class="text-sm text-gray-500">${item.total_pages || 1} page(s)</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-${docTypeColor}-100 text-${docTypeColor}-800 capitalize">
+                            ${item.document_type || 'Inconnu'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${date}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="w-full bg-gray-200 rounded-full h-2 mr-2" style="width: 100px;">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: ${confidence}%"></div>
+                            </div>
+                            <span class="text-sm text-gray-600">${confidence}%</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="downloadDoc('${item.process_id}', 'json')" class="text-blue-600 hover:text-blue-900 mr-3" title="Télécharger JSON">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button onclick="downloadDoc('${item.process_id}', 'csv')" class="text-green-600 hover:text-green-900 mr-3" title="Télécharger CSV">
+                            <i class="fas fa-file-csv"></i>
+                        </button>
+                        <button onclick="viewDoc('${item.process_id}')" class="text-purple-600 hover:text-purple-900" title="Voir les détails">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                `;
+
+                tbody.appendChild(row);
+            });
+
+            document.getElementById('historySection').classList.remove('hidden');
+        }
+
+        async function downloadDoc(processId, format) {
+            try {
+                const response = await fetch(`${API_URL}/ocr/download/${processId}/${format}`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ocr_${processId}.${format}`;
+                a.click();
+            } catch (error) {
+                alert('Erreur de téléchargement');
+            }
+        }
+
+        function viewDoc(processId) {
+            // Store the process ID and redirect to results page
+            localStorage.setItem('view_process_id', processId);
+            window.location.href = `results.html?id=${processId}`;
+        }
+
+        function getDocTypeIcon(type) {
+            const icons = {
+                'cv': 'fa-id-card',
+                'invoice': 'fa-file-invoice',
+                'facture': 'fa-file-invoice',
+                'contract': 'fa-file-contract',
+                'essay': 'fa-book',
+                'exercise': 'fa-pen'
+            };
+            return icons[type?.toLowerCase()] || 'fa-file-alt';
+        }
+
+        function getDocTypeColor(type) {
+            const colors = {
+                'cv': 'green',
+                'invoice': 'purple',
+                'facture': 'purple',
+                'contract': 'blue',
+                'essay': 'orange',
+                'exercise': 'red'
+            };
+            return colors[type?.toLowerCase()] || 'gray';
+        }
+
+        function showError(message) {
+            document.getElementById('errorSection').classList.remove('hidden');
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        function logout() {
+            localStorage.removeItem('ocr_token');
+            localStorage.removeItem('ocr_user');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+
+</html>

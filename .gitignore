@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv/
+backend/venv/
+venv/
+.vscode/
+.DS_Store
+*.zip
+*.log
+backend/results/
+backend/uploads/
+backend/ocr_database.db
+backend/nohup.out

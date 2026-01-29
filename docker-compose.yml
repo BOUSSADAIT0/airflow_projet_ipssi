@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ocr-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/results:/app/results
+      - ./backend/exports:/app/exports
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SECRET_KEY=ocr-intelligent-secret-key-2024-production
+    restart: unless-stopped
+    networks:
+      - ocr-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/auth/login" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ocr-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - ocr-network
+
+networks:
+  ocr-network:
+    driver: bridge
+
+volumes:
+  uploads:
+  results:
+  exports:
