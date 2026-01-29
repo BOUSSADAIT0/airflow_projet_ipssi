@@ -6,9 +6,12 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__CORE__LOAD_EXAMPLES: "False"
 
-    # 🔹 LOGS
+    # 🔹 LOGS : hostname pour l'URL des logs (évite "Request URL is missing an 'http://' or 'https://' protocol")
+    PYTHONPATH: /opt/airflow/project
+    AIRFLOW__CORE__HOSTNAME_CALLABLE: airflow_hostname.get_hostname
     AIRFLOW__LOGGING__REMOTE_LOGGING: "False"
     AIRFLOW__WEBSERVER__EXPOSE_HOSTNAME: "True"
+    AIRFLOW__WEBSERVER__BASE_URL: "http://localhost:8080"
 
     # 🔹 DB Airflow
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
@@ -17,6 +20,8 @@ x-airflow-common: &airflow-common
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./data:/opt/airflow/data
+    # Projet (invoice_processor, semantic_extractor, uploads) pour le DAG factures
+    - .:/opt/airflow/project
 
   networks:
     - airflow-net
@@ -68,6 +73,10 @@ services:
 
   airflow-webserver:
     <<: *airflow-common
+    image: airflow-invoices:2.8.1
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
     container_name: airflow-webserver
     hostname: airflow-webserver
     command: webserver
@@ -86,9 +95,12 @@ services:
 
   airflow-scheduler:
     <<: *airflow-common
+    image: airflow-invoices:2.8.1
     container_name: airflow-scheduler
     hostname: airflow-scheduler
     command: scheduler
+    ports:
+      - "8793:8793"
     depends_on:
       postgres:
         condition: service_healthy
@@ -123,6 +135,8 @@ services:
     working_dir: /app
     command: >
       bash -c "
+      apt-get update -qq &&
+      apt-get install -y -qq poppler-utils tesseract-ocr tesseract-ocr-fra tesseract-ocr-eng > /dev/null 2>&1 &&
       pip install --quiet flask werkzeug pillow requests openpyxl pytesseract pdf2image pymupdf &&
       python web_app.py
       "

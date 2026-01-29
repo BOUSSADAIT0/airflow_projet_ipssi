@@ -5,6 +5,7 @@ Remplace l'interface Tkinter par une interface web moderne
 from flask import Flask, render_template, request, jsonify, send_file, session
 from werkzeug.utils import secure_filename
 import os
+import re
 import json
 from datetime import datetime
 from pathlib import Path
@@ -12,7 +13,8 @@ from pathlib import Path
 # Configuration
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'bmp', 'tiff'}
-MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
+MAX_FILE_SIZE = 500 * 1024 * 1024  # 500 MB (dossier de factures peut être volumineux)
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -59,6 +61,53 @@ def upload_file():
         })
     
     return jsonify({'error': 'Type de fichier non autorisé'}), 400
+
+@app.route('/api/upload_folder', methods=['POST'])
+def upload_folder():
+    """
+    Reçoit plusieurs fichiers (dossier choisi sur le PC de l'utilisateur),
+    les enregistre dans un sous-dossier de uploads/ et retourne le chemin.
+    """
+    if 'files' not in request.files and 'file' not in request.files:
+        return jsonify({'error': 'Aucun fichier fourni'}), 400
+    folder_name = request.form.get('folder_name', '')
+    if not folder_name or not re.match(r'^[a-zA-Z0-9_-]+$', folder_name):
+        folder_name = 'from_pc_' + datetime.now().strftime('%Y%m%d_%H%M%S')
+    target_dir = os.path.join(app.config['UPLOAD_FOLDER'], folder_name)
+    os.makedirs(target_dir, exist_ok=True)
+    files = request.files.getlist('files') or request.files.getlist('file')
+    uploaded = 0
+    copied_names = []
+    seen = {}
+    for i, f in enumerate(files):
+        if f.filename == '':
+            continue
+        if not allowed_file(f.filename):
+            continue
+        raw_name = secure_filename(os.path.basename(f.filename))
+        if not raw_name:
+            raw_name = 'fichier'
+        base, ext = os.path.splitext(raw_name)
+        if not ext:
+            ext = '.pdf'
+        unique_name = raw_name
+        if unique_name in seen:
+            seen[unique_name] += 1
+            unique_name = base + '_' + str(seen[unique_name]) + ext
+        else:
+            seen[unique_name] = 0
+        filepath = os.path.join(target_dir, unique_name)
+        f.save(filepath)
+        uploaded += 1
+        copied_names.append(unique_name)
+    rel_path = os.path.join(UPLOAD_FOLDER, folder_name).replace('\\', '/')
+    return jsonify({
+        'success': True,
+        'path': rel_path,
+        'uploaded': uploaded,
+        'files': copied_names,
+        'message': f'{uploaded} fichier(s) copié(s) depuis votre PC'
+    })
 
 @app.route('/api/process', methods=['POST'])
 def process_invoice():
@@ -145,18 +194,21 @@ def process_batch():
 
 @app.route('/api/export/excel', methods=['POST'])
 def export_to_excel():
-    """Endpoint pour exporter vers Excel"""
-    data = request.json
+    """Endpoint pour exporter vers Excel (optionnel: excel_path dans le body)"""
+    data = request.json or {}
     invoice_data = data.get('data', {})
+    excel_path = data.get('excel_path')
     
     if not invoice_data:
         return jsonify({'error': 'Aucune donnée à exporter'}), 400
     
     try:
         from invoice_processor import InvoiceProcessor
+        from user_config import resolve_excel_path
         
         processor = InvoiceProcessor()
-        result = processor.export_to_excel(invoice_data)
+        path = excel_path or resolve_excel_path(PROJECT_ROOT)
+        result = processor.export_to_excel(invoice_data, excel_path=path)
         
         if result.get('success'):
             return jsonify({
@@ -190,6 +242,267 @@ def get_history():
         return jsonify({'success': True, 'history': []})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/upload_excel', methods=['POST'])
+def upload_excel():
+    """
+    Reçoit un fichier Excel (.xlsx) depuis le PC de l'utilisateur,
+    l'enregistre dans data/ et retourne le chemin pour la config.
+    """
+    if 'file' not in request.files:
+        return jsonify({'error': 'Aucun fichier fourni'}), 400
+    f = request.files['file']
+    if f.filename == '':
+        return jsonify({'error': 'Aucun fichier sélectionné'}), 400
+    if not f.filename.lower().endswith('.xlsx'):
+        return jsonify({'error': 'Le fichier doit être un Excel (.xlsx)'}), 400
+    os.makedirs('data', exist_ok=True)
+    filename = secure_filename(os.path.basename(f.filename))
+    if not filename.endswith('.xlsx'):
+        filename += '.xlsx'
+    filepath = os.path.join('data', filename)
+    f.save(os.path.join(PROJECT_ROOT, filepath))
+    return jsonify({
+        'success': True,
+        'path': filepath.replace('\\', '/'),
+        'message': 'Fichier Excel enregistré sur le serveur'
+    })
+
+@app.route('/api/download_excel', methods=['GET'])
+def download_excel():
+    """
+    Télécharge le fichier Excel généré vers le PC de l'utilisateur.
+    GET /api/download_excel?path=data/factures.xlsx
+    """
+    path = request.args.get('path', '').strip()
+    if not path or '..' in path or path.startswith('/'):
+        return jsonify({'error': 'Chemin invalide'}), 400
+    full_path = os.path.join(PROJECT_ROOT, path.replace('/', os.sep))
+    if not os.path.isfile(full_path):
+        return jsonify({'error': 'Fichier introuvable'}), 404
+    try:
+        return send_file(
+            full_path,
+            as_attachment=True,
+            download_name=os.path.basename(path),
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/excel_data', methods=['GET'])
+def get_excel_data():
+    """
+    Lit le fichier Excel configuré et retourne les lignes (données extraites).
+    Permet d'afficher le tableau au chargement de la page (données du DAG ou dernier traitement).
+    """
+    try:
+        from user_config import resolve_excel_path
+        excel_path = resolve_excel_path(PROJECT_ROOT)
+        print(f"[DEBUG] get_excel_data - excel_path={excel_path}, exists={os.path.isfile(excel_path)}")
+        if not os.path.isfile(excel_path):
+            print("[DEBUG] Fichier Excel introuvable")
+            return jsonify({'success': True, 'rows': [], 'excel_path': excel_path})
+        try:
+            from openpyxl import load_workbook
+        except ImportError:
+            print("[DEBUG] openpyxl non disponible")
+            return jsonify({'success': False, 'error': 'openpyxl non disponible', 'rows': []}), 500
+        wb = load_workbook(excel_path, read_only=True, data_only=True)
+        ws = wb.active
+        headers = [cell.value for cell in ws[1]]
+        print(f"[DEBUG] En-têtes Excel: {headers}")
+        print(f"[DEBUG] Nombre de lignes (max_row): {ws.max_row}")
+        key_map = {
+            'Date Facture': 'date',
+            'Numéro Facture': 'numero_facture',
+            'Fournisseur': 'fournisseur',
+            'SIREN': 'siren',
+            'SIRET': 'siret',
+            'Adresse': 'adresse_fournisseur',
+            'Code Postal': 'code_postal',
+            'Ville': 'ville',
+            'ID Client': 'id_client',
+            'Total HT': 'total_ht',
+            'TVA': 'tva',
+            'Total TTC': 'total_ttc',
+            'Fichier PDF': 'fichier_pdf',
+        }
+        rows = []
+        row_count = 0
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            row_count += 1
+            if not any(cell is not None and str(cell).strip() for cell in row):
+                continue
+            d = {}
+            for i, h in enumerate(headers):
+                if i < len(row) and h in key_map:
+                    val = row[i]
+                    d[key_map[h]] = '' if val is None else str(val).strip()
+            rows.append(d)
+            if row_count <= 3:
+                print(f"[DEBUG] Ligne {row_count}: {d}")
+        wb.close()
+        print(f"[DEBUG] Total lignes lues: {len(rows)}")
+        rel_path = os.path.relpath(excel_path, PROJECT_ROOT).replace('\\', '/')
+        return jsonify({'success': True, 'rows': rows, 'excel_path': rel_path})
+    except Exception as e:
+        import traceback
+        return jsonify({'success': False, 'error': str(e), 'rows': [], 'details': traceback.format_exc()}), 500
+
+@app.route('/api/source_files', methods=['GET'])
+def list_source_files():
+    """
+    Liste les fichiers facture (PDF, images) du dossier source (dossier configuré + sous-dossiers).
+    Query: path=uploads (optionnel, sinon config).
+    """
+    try:
+        from user_config import resolve_source_folder
+        rel = request.args.get('path', '').strip().replace('\\', '/')
+        if rel:
+            source_folder = os.path.abspath(os.path.join(PROJECT_ROOT, rel))
+        else:
+            source_folder = resolve_source_folder(PROJECT_ROOT)
+        if not os.path.isdir(source_folder):
+            return jsonify({'success': True, 'files': [], 'folder': rel or 'uploads'})
+        extensions = ('pdf', 'png', 'jpg', 'jpeg', 'bmp', 'tiff')
+        files = []
+        for p in Path(source_folder).rglob('*'):
+            if p.is_file() and p.suffix.lower().lstrip('.') in extensions:
+                try:
+                    size = p.stat().st_size
+                except OSError:
+                    size = 0
+                rel_path = os.path.relpath(p, source_folder).replace('\\', '/')
+                files.append({
+                    'name': p.name,
+                    'path': rel_path,
+                    'size': size,
+                })
+        files.sort(key=lambda x: x['path'].lower())
+        folder_display = os.path.relpath(source_folder, PROJECT_ROOT).replace('\\', '/') if source_folder.startswith(PROJECT_ROOT) else source_folder
+        return jsonify({'success': True, 'files': files, 'folder': folder_display})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'files': []}), 500
+
+
+@app.route('/api/config', methods=['GET', 'POST'])
+def config():
+    """GET: retourne la config. POST: enregistre la config (dossier source, Excel sortie, intervalle DAG)."""
+    try:
+        from user_config import load_user_config, save_user_config, DEFAULT_CONFIG
+        if request.method == 'GET':
+            return jsonify({'success': True, 'config': load_user_config()})
+        data = request.json or {}
+        config = {
+            'invoice_source_path': data.get('invoice_source_path', DEFAULT_CONFIG['invoice_source_path']),
+            'invoice_output_excel': data.get('invoice_output_excel', DEFAULT_CONFIG['invoice_output_excel']),
+            'dag_interval_hours': float(data.get('dag_interval_hours', DEFAULT_CONFIG['dag_interval_hours'])),
+        }
+        save_user_config(config)
+        return jsonify({'success': True, 'config': config})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/process_folder', methods=['POST'])
+def process_folder():
+    """
+    Traite toutes les factures du dossier indiqué et exporte vers le fichier Excel indiqué.
+    Si invoice_source_path et invoice_output_excel sont envoyés dans le body, ils sont utilisés
+    (dossier affiché dans l'interface) ; sinon on lit la config enregistrée.
+    """
+    try:
+        from user_config import load_user_config, resolve_source_folder, resolve_excel_path
+        from invoice_processor import InvoiceProcessor
+        
+        body = request.json or {}
+        method = body.get('method', 'auto')  # auto → OpenAI si clé présente, sinon semantic
+        print(f"[DEBUG] process_folder appelé - method={method}, body={body}")
+        
+        # Utiliser les chemins envoyés par l'interface (dossier/Excel affichés) si présents
+        if body.get('invoice_source_path'):
+            rel = body.get('invoice_source_path', '').strip().replace('\\', '/')
+            source_folder = os.path.abspath(os.path.join(PROJECT_ROOT, rel))
+        else:
+            source_folder = resolve_source_folder(PROJECT_ROOT)
+        if body.get('invoice_output_excel'):
+            rel = body.get('invoice_output_excel', '').strip().replace('\\', '/')
+            excel_path = os.path.abspath(os.path.join(PROJECT_ROOT, rel))
+        else:
+            excel_path = resolve_excel_path(PROJECT_ROOT)
+        
+        print(f"[DEBUG] source_folder={source_folder}, excel_path={excel_path}")
+        print(f"[DEBUG] PROJECT_ROOT={PROJECT_ROOT}")
+        
+        if not os.path.isdir(source_folder):
+            print(f"[DEBUG] Création du dossier {source_folder}")
+            os.makedirs(source_folder, exist_ok=True)
+        
+        extensions = ('pdf', 'png', 'jpg', 'jpeg', 'bmp', 'tiff')
+        invoice_files = []
+        for f in Path(source_folder).rglob('*'):
+            if f.is_file() and f.suffix.lower().lstrip('.') in extensions:
+                invoice_files.append(str(f))
+        invoice_files.sort()
+        
+        print(f"[DEBUG] Fichiers trouvés: {len(invoice_files)} fichiers")
+        for f in invoice_files:
+            print(f"[DEBUG]   - {f}")
+        
+        if not invoice_files:
+            print("[DEBUG] Aucun fichier facture trouvé")
+            return jsonify({
+                'success': True,
+                'message': 'Aucun fichier facture dans le dossier',
+                'total': 0,
+                'processed': 0,
+                'excel_path': excel_path
+            })
+        
+        processor = InvoiceProcessor()
+        results = []
+        for filepath in invoice_files:
+            print(f"[DEBUG] Traitement de {filepath} avec méthode {method}")
+            result = processor.process_invoice(filepath, method)
+            print(f"[DEBUG] Résultat pour {os.path.basename(filepath)}: success={result.get('success')}, data_keys={list(result.get('data', {}).keys()) if result.get('data') else 'None'}")
+            if result.get('success'):
+                data = result.get('data', {})
+                print(f"[DEBUG] Données extraites: date={data.get('date')}, numero={data.get('numero_facture')}, fournisseur={data.get('fournisseur')}, total_ttc={data.get('total_ttc')}")
+                excel_result = processor.export_to_excel(data, excel_path=excel_path)
+                results.append({
+                    'filepath': filepath,
+                    'success': True,
+                    'excel_exported': excel_result.get('success', False),
+                    'data': data
+                })
+            else:
+                error_msg = result.get('error', 'Erreur inconnue')
+                print(f"[DEBUG] Échec pour {os.path.basename(filepath)}: {error_msg}")
+                results.append({
+                    'filepath': filepath,
+                    'success': False,
+                    'error': error_msg,
+                    'data': None
+                })
+        
+        processed_count = sum(1 for r in results if r.get('success'))
+        print(f"[DEBUG] Résumé: {processed_count}/{len(results)} fichiers traités avec succès")
+        response_data = {
+            'success': True,
+            'total': len(results),
+            'processed': processed_count,
+            'results': results,
+            'excel_path': excel_path
+        }
+        print(f"[DEBUG] Réponse JSON: total={response_data['total']}, processed={response_data['processed']}, results_count={len(response_data['results'])}")
+        return jsonify(response_data)
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'details': traceback.format_exc()
+        }), 500
 
 @app.route('/api/status', methods=['GET'])
 def get_status():

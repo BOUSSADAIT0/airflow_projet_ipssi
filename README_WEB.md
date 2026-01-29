@@ -52,21 +52,47 @@ docker compose up -d
 - **Airflow UI**: http://localhost:8080 (admin/admin)
 - **Mock API**: http://localhost:8099
 
-### 3. Utilisation
+### 3. Comment lancer Airflow (essentiel)
+
+Airflow orchestre le traitement automatique des factures. Pour le lancer :
+
+1. **Démarrer tous les services** (dont Airflow) :
+   ```bash
+   docker compose up -d
+   ```
+2. **Attendre que les conteneurs soient prêts** (Postgres, init, webserver, scheduler) :
+   ```bash
+   docker compose ps
+   ```
+   Vérifier que `airflow-webserver` et `airflow-scheduler` sont "Up".
+3. **Ouvrir l’interface Airflow** : http://localhost:8080  
+   - Identifiants : **admin** / **admin**
+4. **Activer le DAG des factures** : dans la liste des DAGs, trouver **`projet_facture`** et basculer le toggle sur **ON** (activé).
+5. **Déclencher une exécution** (optionnel) : cliquer sur le DAG → **Trigger DAG** (bouton play). Sinon le DAG tourne **toutes les heures** automatiquement.
+6. **Déposer des factures** : placer les PDF ou images dans le dossier **`uploads/`** à la racine du projet. Au prochain run, Airflow les traitera (extraction sémantique locale par défaut, export Excel dans `data/`).
+
+**Résumé des commandes :**
+```bash
+docker compose up -d              # Lancer Airflow + web + Postgres
+docker compose logs airflow-scheduler   # Voir les logs du scheduler
+docker compose down                # Tout arrêter
+```
+
+### 4. Utilisation
 
 #### Via l'interface web
 1. Ouvrir http://localhost:5000
 2. Sélectionner ou glisser-déposer une facture
-3. Choisir la méthode d'extraction (Auto, Ollama, Tesseract)
+3. Choisir la méthode d'extraction (Semantic, Auto, Ollama, Tesseract)
 4. Visualiser les données extraites
 5. Exporter vers Excel ou JSON
 
 #### Via Airflow
-1. Accéder à http://localhost:8080
+1. Accéder à http://localhost:8080 (admin / admin)
 2. Activer le DAG **`projet_facture`** (fichier `dags/d5_invoice_processing.py`)
-3. Le DAG s'exécute automatiquement toutes les heures
-4. Placer les factures dans le dossier `uploads/`
-5. Les factures seront traitées automatiquement
+3. Le DAG s'exécute automatiquement toutes les heures (ou déclencher manuellement)
+4. Placer les factures dans le dossier **`uploads/`**
+5. Les factures sont traitées avec la méthode **sémantique** (locale, sans Ollama/API) et exportées dans `data/factures.xlsx`
 
 ## 🔧 Configuration
 
@@ -83,6 +109,7 @@ OLLAMA_BASE_URL=http://ollama:11434
 
 ### Méthodes d'extraction
 
+- **Semantic** (par défaut dans le DAG) : 100 % local (regex + spaCy optionnel), PDF texte direct ou OCR Tesseract — pas d’Ollama ni API.
 - **Auto**: Utilise Ollama si disponible, sinon Tesseract
 - **Ollama**: Utilise les modèles locaux Ollama (llama3.2, mistral, etc.)
 - **Tesseract**: Utilise Tesseract OCR classique
@@ -136,7 +163,9 @@ docker compose logs invoice-web
 ### Le DAG Airflow échoue
 ```bash
 docker compose logs airflow-scheduler
+docker compose logs airflow-webserver
 ```
+Vérifier que le dossier `uploads/` existe et que le volume projet est bien monté (`.:/opt/airflow/project` dans `docker-compose.yml`).
 
 ### Ollama non disponible
 - Vérifier que Ollama est installé et démarré localement

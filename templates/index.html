@@ -1,531 +1,583 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Système d'Extraction de Factures</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-        
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-        
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-        
-        .content {
-            padding: 40px;
-        }
-        
-        .section {
-            margin-bottom: 40px;
-        }
-        
-        .section-title {
-            font-size: 1.5em;
-            color: #333;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 3px solid #667eea;
-        }
-        
-        .upload-area {
-            border: 3px dashed #667eea;
-            border-radius: 15px;
-            padding: 40px;
-            text-align: center;
-            background: #f8f9fa;
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-        
-        .upload-area:hover {
-            background: #e9ecef;
-            border-color: #764ba2;
-        }
-        
-        .upload-area.dragover {
-            background: #d4edda;
-            border-color: #28a745;
-        }
-        
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 10px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin: 5px;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .btn:active {
-            transform: translateY(0);
-        }
-        
-        .btn-secondary {
-            background: #6c757d;
-        }
-        
-        .btn-success {
-            background: #28a745;
-        }
-        
-        .btn-danger {
-            background: #dc3545;
-        }
-        
-        .progress-container {
-            margin: 20px 0;
-            display: none;
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 30px;
-            background: #e9ecef;
-            border-radius: 15px;
-            overflow: hidden;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            width: 0%;
-            transition: width 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-        }
-        
-        .results {
-            margin-top: 30px;
-            display: none;
-        }
-        
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        
-        .data-table th,
-        .data-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #dee2e6;
-        }
-        
-        .data-table th {
-            background: #667eea;
-            color: white;
-            font-weight: bold;
-        }
-        
-        .data-table tr:hover {
-            background: #f8f9fa;
-        }
-        
-        .status {
-            padding: 10px 20px;
-            border-radius: 10px;
-            margin: 10px 0;
-            display: none;
-        }
-        
-        .status.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .status.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .status.info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-        
-        .method-selector {
-            margin: 20px 0;
-        }
-        
-        .method-selector label {
-            margin-right: 20px;
-            font-weight: bold;
-        }
-        
-        .method-selector input[type="radio"] {
-            margin-right: 5px;
-        }
-        
-        .batch-section {
-            margin-top: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extraction de factures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-card: #1e293b;
+      --bg-body: #f1f5f9;
+      --accent: #06b6d4;
+      --accent-hover: #0891b2;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --white: #fff;
+      --success: #10b981;
+      --error: #ef4444;
+      --radius: 12px;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: var(--bg-body);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .header {
+      background: var(--bg);
+      color: var(--white);
+      padding: 1.25rem 2rem;
+      box-shadow: var(--shadow-lg);
+    }
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .header p {
+      font-size: 0.875rem;
+      color: #94a3b8;
+      margin-top: 0.25rem;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .card-title::before {
+      content: '';
+      width: 4px;
+      height: 1.25rem;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.25rem;
+    }
+    .field label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.375rem;
+    }
+    .field input {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .field input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+    }
+    .method-group {
+      margin-top: 1rem;
+    }
+    .method-group .label-top {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+    .method-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .method-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.875rem;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+    .method-option:hover { border-color: var(--accent); background: #f0fdfa; }
+    .method-option input { display: none; }
+    .method-option input:checked + .method-dot {
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+    .method-dot {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #cbd5e1;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      font-family: inherit;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: var(--white);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.35);
+    }
+    .btn-secondary {
+      background: #f1f5f9;
+      color: var(--text);
+    }
+    .btn-secondary:hover:not(:disabled) { background: #e2e8f0; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .msg {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      display: none;
+    }
+    .msg.success { background: #d1fae5; color: #065f46; }
+    .msg.error { background: #fee2e2; color: #991b1b; }
+    .msg.info { background: #e0f2fe; color: #0369a1; }
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid #e2e8f0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    thead {
+      background: var(--bg-card);
+      color: var(--white);
+    }
+    th {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    tbody tr { transition: background 0.15s; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr:last-child td { border-bottom: none; }
+    .empty-state {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.9375rem;
+    }
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 0.75rem;
+      opacity: 0.5;
+    }
+    .field-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+    .upload-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      text-align: center;
+      background: #f8fafc;
+      margin-top: 1rem;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .upload-zone.dragover { border-color: var(--accent); background: #ecfeff; }
+    .upload-zone p { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+    .upload-zone .btn-browse { margin-top: 0.25rem; }
+    .upload-zone input[type="file"] { display: none; }
+    .upload-zone .upload-result { font-size: 0.8125rem; margin-top: 0.75rem; }
+    .status-badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 500; }
+    .status-badge.success { background: #d1fae5; color: #065f46; }
+    .status-badge.error { background: #fee2e2; color: #991b1b; }
+    .status-detail { font-size: 0.8125rem; color: var(--text-muted); max-width: 280px; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📄 Système d'Extraction de Factures</h1>
-            <p>Extraction intelligente avec IA - Interface Web</p>
+  <header class="header">
+    <h1>Extraction de factures</h1>
+    <p>Configurez le dossier source, lancez un traitement ou consultez les résultats extraits.</p>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2 class="card-title">Configuration</h2>
+      <div class="form-grid">
+        <div class="field">
+          <label for="sourcePath">Dossier source des factures</label>
+          <input type="text" id="sourcePath" placeholder="ex: uploads">
         </div>
-        
-        <div class="content">
-            <!-- Section Upload -->
-            <div class="section">
-                <h2 class="section-title">⚡ Chargement de facture</h2>
-                
-                <div class="method-selector">
-                    <label>Méthode d'extraction:</label>
-                    <label><input type="radio" name="method" value="auto" checked> 🔄 Auto</label>
-                    <label><input type="radio" name="method" value="ollama"> 🦙 Ollama</label>
-                    <label><input type="radio" name="method" value="tesseract"> 🔍 Tesseract</label>
-                </div>
-                
-                <div class="upload-area" id="uploadArea">
-                    <p style="font-size: 1.2em; margin-bottom: 10px;">📁 Glissez-déposez un fichier ici</p>
-                    <p style="color: #666;">ou</p>
-                    <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.bmp,.tiff" style="display: none;">
-                    <button class="btn" onclick="document.getElementById('fileInput').click()">
-                        📄 Sélectionner un fichier
-                    </button>
-                </div>
-                
-                <div class="progress-container" id="progressContainer">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill">0%</div>
-                    </div>
-                    <p id="progressText" style="text-align: center; margin-top: 10px;"></p>
-                </div>
-                
-                <div class="status" id="statusMessage"></div>
-            </div>
-            
-            <!-- Section Résultats -->
-            <div class="section">
-                <h2 class="section-title">📊 Données extraites</h2>
-                
-                <div class="results" id="results">
-                    <table class="data-table" id="dataTable">
-                        <thead>
-                            <tr>
-                                <th>Champ</th>
-                                <th>Valeur</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dataTableBody">
-                        </tbody>
-                    </table>
-                    
-                    <div style="margin-top: 20px;">
-                        <button class="btn btn-success" onclick="exportToExcel()">📊 Exporter vers Excel</button>
-                        <button class="btn btn-secondary" onclick="exportToJSON()">📋 Exporter en JSON</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Section Traitement par lot -->
-            <div class="section">
-                <div class="batch-section">
-                    <h2 class="section-title">📂 Traitement par lot</h2>
-                    <p>Traiter plusieurs factures en une seule fois</p>
-                    <input type="file" id="batchInput" multiple accept=".pdf,.png,.jpg,.jpeg,.bmp,.tiff" style="display: none;">
-                    <button class="btn" onclick="document.getElementById('batchInput').click()">
-                        📂 Sélectionner plusieurs fichiers
-                    </button>
-                    <div id="batchResults" style="margin-top: 20px;"></div>
-                </div>
-            </div>
+        <div class="field">
+          <label for="excelPath">Fichier Excel de sortie</label>
+          <input type="text" id="excelPath" placeholder="ex: data/factures.xlsx">
         </div>
-    </div>
-    
-    <script>
-        let currentData = null;
-        
-        // Gestion du drag & drop
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
+        <div class="field">
+          <label for="dagInterval">Intervalle DAG (heures)</label>
+          <input type="number" id="dagInterval" min="0.25" step="0.25" value="1">
+        </div>
+      </div>
+      <div class="upload-zone" id="uploadZone">
+        <p><strong>Choisir des factures sur votre PC</strong></p>
+        <p>Glissez-déposez des PDF ici ou cliquez pour parcourir.</p>
+        <input type="file" id="fileInput" multiple accept=".pdf,.png,.jpg,.jpeg,.bmp,.tiff">
+        <button type="button" class="btn btn-secondary btn-browse" id="browseBtn">Parcourir…</button>
+        <div class="upload-result" id="uploadResult"></div>
+      </div>
+      <div class="method-group">
+        <div class="label-top">Méthode d'extraction</div>
+        <div class="method-options">
+          <label class="method-option">
+            <input type="radio" name="method" value="auto" checked>
+            <span class="method-dot"></span>
+            Auto (OpenAI si clé, sinon sémantique)
+          </label>
+          <label class="method-option">
+            <input type="radio" name="method" value="openai">
+            <span class="method-dot"></span>
+            OpenAI
+          </label>
+          <label class="method-option">
+            <input type="radio" name="method" value="semantic">
+            <span class="method-dot"></span>
+            Sémantique (local)
+          </label>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" id="saveConfig" class="btn btn-secondary">Enregistrer la config</button>
+        <button type="button" id="processFolder" class="btn btn-primary">Traiter le dossier maintenant</button>
+      </div>
+      <div id="configMsg" class="msg"></div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Fichiers dans le dossier source</h2>
+      <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.75rem;">Liste des PDF et images présents dans le dossier configuré (et sous-dossiers).</p>
+      <button type="button" class="btn btn-secondary" id="refreshFilesBtn" style="margin-bottom: 0.75rem;">Actualiser la liste</button>
+      <div class="table-wrap">
+        <table id="sourceFilesTable">
+          <thead>
+            <tr>
+              <th>Nom du fichier</th>
+              <th>Chemin relatif</th>
+              <th>Taille</th>
+            </tr>
+          </thead>
+          <tbody id="sourceFilesBody">
+            <tr><td colspan="3"><div class="empty-state">Cliquez sur « Actualiser la liste » ou changez le dossier source.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">État du traitement par fichier</h2>
+      <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.75rem;">Résultat du dernier traitement lancé depuis cette page.</p>
+      <div class="table-wrap">
+        <table id="treatmentStatusTable">
+          <thead>
+            <tr>
+              <th>Fichier</th>
+              <th>État</th>
+              <th>Détail</th>
+            </tr>
+          </thead>
+          <tbody id="treatmentStatusBody">
+            <tr><td colspan="3"><div class="empty-state">Lancez « Traiter le dossier maintenant » pour afficher l'état de chaque fichier.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Résultat du traitement</h2>
+      <div id="processResultHint" class="msg"></div>
+      <div class="table-wrap">
+        <table id="resultTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Numéro</th>
+              <th>Fournisseur</th>
+              <th>SIRET</th>
+              <th>Total HT</th>
+              <th>TVA</th>
+              <th>Total TTC</th>
+              <th>Fichier</th>
+            </tr>
+          </thead>
+          <tbody id="resultBody">
+            <tr><td colspan="8"><div class="empty-state">Chargement…</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API = '';
+    function showMsg(elId, text, type) {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      el.textContent = text;
+      el.className = 'msg ' + (type || 'info');
+      el.style.display = 'block';
+    }
+    function hideMsg(elId) {
+      const el = document.getElementById(elId);
+      if (el) { el.style.display = 'none'; el.textContent = ''; }
+    }
+
+    async function loadConfig() {
+      try {
+        const r = await fetch(API + '/api/config');
+        const data = await r.json();
+        if (data.success && data.config) {
+          document.getElementById('sourcePath').value = data.config.invoice_source_path || 'uploads';
+          document.getElementById('excelPath').value = data.config.invoice_output_excel || 'data/factures.xlsx';
+          document.getElementById('dagInterval').value = data.config.dag_interval_hours ?? 1;
+        }
+      } catch (e) { console.warn('Config load failed', e); }
+    }
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' o';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' Ko';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' Mo';
+    }
+
+    async function loadSourceFiles() {
+      const path = document.getElementById('sourcePath').value.trim() || 'uploads';
+      const tbody = document.getElementById('sourceFilesBody');
+      try {
+        const r = await fetch(API + '/api/source_files?path=' + encodeURIComponent(path));
+        const data = await r.json();
+        if (!data.success) {
+          tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state">Erreur: ' + (data.error || '') + '</div></td></tr>';
+          return;
+        }
+        const files = data.files || [];
+        if (files.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state">Aucun fichier PDF/image dans ce dossier.</div></td></tr>';
+          return;
+        }
+        tbody.innerHTML = files.map(f => `
+          <tr>
+            <td>${escapeHtml(f.name)}</td>
+            <td>${escapeHtml(f.path)}</td>
+            <td>${formatSize(f.size || 0)}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state">Erreur: ' + escapeHtml(e.message) + '</div></td></tr>';
+      }
+    }
+
+    function escapeHtml(s) {
+      if (s == null || s === undefined) return '';
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    function showTreatmentStatus(results) {
+      const tbody = document.getElementById('treatmentStatusBody');
+      if (!results || results.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state">Aucun résultat.</div></td></tr>';
+        return;
+      }
+      tbody.innerHTML = results.map(r => {
+        const name = escapeHtml((r.filepath || '').split(/[/\\]/).pop() || '—');
+        const ok = r.success;
+        const badge = ok ? '<span class="status-badge success">Traité</span>' : '<span class="status-badge error">Erreur</span>';
+        const detail = ok ? (r.excel_exported ? 'Exporté vers Excel' : 'Données extraites') : escapeHtml(r.error || '—');
+        return `<tr><td>${name}</td><td>${badge}</td><td class="status-detail">${detail}</td></tr>`;
+      }).join('');
+    }
+
+    async function loadExcelData() {
+      const tbody = document.getElementById('resultBody');
+      try {
+        const r = await fetch(API + '/api/excel_data');
+        const data = await r.json();
+        if (!data.success) {
+          tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">Erreur: ' + (data.error || 'inconnue') + '</div></td></tr>';
+          return;
+        }
+        const rows = data.rows || [];
+        if (rows.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">Aucune donnée. Traitez un dossier ou attendez le DAG Airflow.</div></td></tr>';
+          return;
+        }
+        tbody.innerHTML = rows.map(row => `
+          <tr>
+            <td>${row.date || '—'}</td>
+            <td>${row.numero_facture || '—'}</td>
+            <td>${row.fournisseur || '—'}</td>
+            <td>${row.siret || '—'}</td>
+            <td>${row.total_ht || '—'}</td>
+            <td>${row.tva || '—'}</td>
+            <td>${row.total_ttc || '—'}</td>
+            <td>${row.fichier_pdf || '—'}</td>
+          </tr>
+        `).join('');
+        hideMsg('processResultHint');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">Erreur chargement: ' + e.message + '</div></td></tr>';
+      }
+    }
+
+    document.getElementById('saveConfig').addEventListener('click', async () => {
+      hideMsg('configMsg');
+      const payload = {
+        invoice_source_path: document.getElementById('sourcePath').value.trim() || 'uploads',
+        invoice_output_excel: document.getElementById('excelPath').value.trim() || 'data/factures.xlsx',
+        dag_interval_hours: parseFloat(document.getElementById('dagInterval').value) || 1
+      };
+      try {
+        const r = await fetch(API + '/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
-        
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
+        const data = await r.json();
+        if (data.success) showMsg('configMsg', 'Configuration enregistrée.', 'success');
+        else showMsg('configMsg', data.error || 'Erreur', 'error');
+      } catch (e) { showMsg('configMsg', 'Erreur: ' + e.message, 'error'); }
+    });
+
+    document.getElementById('processFolder').addEventListener('click', async () => {
+      const btn = document.getElementById('processFolder');
+      const method = document.querySelector('input[name="method"]:checked').value;
+      btn.disabled = true;
+      hideMsg('configMsg');
+      showMsg('processResultHint', 'Traitement en cours…', 'info');
+      try {
+        const r = await fetch(API + '/api/process_folder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            method,
+            invoice_source_path: document.getElementById('sourcePath').value.trim() || undefined,
+            invoice_output_excel: document.getElementById('excelPath').value.trim() || undefined
+          })
         });
-        
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleFile(files[0]);
-            }
+        const data = await r.json();
+        if (data.success) {
+          showMsg('processResultHint', (data.message || 'Traitement terminé.') + ' Rechargement du tableau…', 'success');
+          await loadExcelData();
+        } else {
+          showMsg('processResultHint', data.error || 'Erreur lors du traitement', 'error');
+        }
+      } catch (e) { showMsg('processResultHint', 'Erreur: ' + e.message, 'error'); }
+      btn.disabled = false;
+    });
+
+    // ——— Choisir / déposer des factures depuis le PC ———
+    const fileInput = document.getElementById('fileInput');
+    const uploadZone = document.getElementById('uploadZone');
+    const uploadResult = document.getElementById('uploadResult');
+
+    document.getElementById('browseBtn').addEventListener('click', () => fileInput.click());
+    document.getElementById('refreshFilesBtn').addEventListener('click', () => loadSourceFiles());
+
+    function handleFiles(files) {
+      if (!files || files.length === 0) return;
+      const form = new FormData();
+      for (let i = 0; i < files.length; i++) form.append('files', files[i]);
+      uploadResult.textContent = 'Envoi en cours…';
+      uploadResult.style.color = '';
+      fetch(API + '/api/upload_folder', { method: 'POST', body: form })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('sourcePath').value = data.path || 'uploads';
+            uploadResult.textContent = data.message + ' — Dossier source mis à jour : ' + (data.path || '');
+            uploadResult.style.color = 'var(--success)';
+            showMsg('configMsg', 'Fichiers reçus. Dossier source = ' + data.path + '. Vous pouvez lancer « Traiter le dossier maintenant ».', 'success');
+          } else {
+            uploadResult.textContent = data.error || 'Erreur';
+            uploadResult.style.color = 'var(--error)';
+          }
+        })
+        .catch(e => {
+          uploadResult.textContent = 'Erreur: ' + e.message;
+          uploadResult.style.color = 'var(--error)';
         });
-        
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                handleFile(e.target.files[0]);
-            }
-        });
-        
-        async function handleFile(file) {
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            showProgress(0, 'Upload du fichier...');
-            showStatus('info', '📤 Upload en cours...');
-            
-            try {
-                // Upload
-                const uploadResponse = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const uploadData = await uploadResponse.json();
-                
-                if (!uploadData.success) {
-                    throw new Error(uploadData.error || 'Erreur lors de l\'upload');
-                }
-                
-                showProgress(30, 'Traitement de la facture...');
-                
-                // Traitement
-                const method = document.querySelector('input[name="method"]:checked').value;
-                const processResponse = await fetch('/api/process', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        filepath: uploadData.filepath,
-                        method: method
-                    })
-                });
-                
-                const processData = await processResponse.json();
-                
-                if (processData.success) {
-                    showProgress(100, 'Terminé!');
-                    currentData = processData.data;
-                    displayResults(processData.data);
-                    showStatus('success', '✅ Facture traitée avec succès!');
-                } else {
-                    throw new Error(processData.error || 'Erreur lors du traitement');
-                }
-                
-            } catch (error) {
-                showStatus('error', `❌ Erreur: ${error.message}`);
-                hideProgress();
-            }
-        }
-        
-        function showProgress(percent, message) {
-            const container = document.getElementById('progressContainer');
-            const fill = document.getElementById('progressFill');
-            const text = document.getElementById('progressText');
-            
-            container.style.display = 'block';
-            fill.style.width = percent + '%';
-            fill.textContent = percent + '%';
-            text.textContent = message;
-        }
-        
-        function hideProgress() {
-            document.getElementById('progressContainer').style.display = 'none';
-        }
-        
-        function showStatus(type, message) {
-            const status = document.getElementById('statusMessage');
-            status.className = 'status ' + type;
-            status.textContent = message;
-            status.style.display = 'block';
-        }
-        
-        function displayResults(data) {
-            const results = document.getElementById('results');
-            const tbody = document.getElementById('dataTableBody');
-            
-            tbody.innerHTML = '';
-            
-            const fields = [
-                ['Date', 'date'],
-                ['Numéro Facture', 'numero_facture'],
-                ['Fournisseur', 'fournisseur'],
-                ['Total HT', 'total_ht'],
-                ['Total TTC', 'total_ttc'],
-                ['TVA', 'tva'],
-                ['SIRET', 'siret'],
-                ['SIREN', 'siren'],
-                ['Adresse', 'adresse_fournisseur'],
-                ['Code Postal', 'code_postal'],
-                ['Ville', 'ville']
-            ];
-            
-            fields.forEach(([label, key]) => {
-                const value = data[key] || 'N/A';
-                const row = tbody.insertRow();
-                row.insertCell(0).textContent = label;
-                row.insertCell(1).textContent = value;
-            });
-            
-            results.style.display = 'block';
-        }
-        
-        async function exportToExcel() {
-            if (!currentData) {
-                alert('Aucune donnée à exporter');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/export/excel', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ data: currentData })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showStatus('success', '✅ Export Excel réussi!');
-                } else {
-                    showStatus('error', `❌ Erreur: ${result.error}`);
-                }
-            } catch (error) {
-                showStatus('error', `❌ Erreur: ${error.message}`);
-            }
-        }
-        
-        function exportToJSON() {
-            if (!currentData) {
-                alert('Aucune donnée à exporter');
-                return;
-            }
-            
-            const dataStr = JSON.stringify(currentData, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `facture_${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-        }
-        
-        // Traitement par lot
-        document.getElementById('batchInput').addEventListener('change', async (e) => {
-            const files = Array.from(e.target.files);
-            if (files.length === 0) return;
-            
-            showStatus('info', `📂 Traitement de ${files.length} fichier(s)...`);
-            
-            const formData = new FormData();
-            files.forEach(file => formData.append('files', file));
-            
-            try {
-                // Upload tous les fichiers
-                const uploadPromises = files.map(file => {
-                    const fd = new FormData();
-                    fd.append('file', file);
-                    return fetch('/api/upload', {
-                        method: 'POST',
-                        body: fd
-                    }).then(r => r.json());
-                });
-                
-                const uploadResults = await Promise.all(uploadPromises);
-                const filepaths = uploadResults
-                    .filter(r => r.success)
-                    .map(r => r.filepath);
-                
-                if (filepaths.length === 0) {
-                    throw new Error('Aucun fichier uploadé avec succès');
-                }
-                
-                // Traiter tous les fichiers
-                const method = document.querySelector('input[name="method"]:checked').value;
-                const processResponse = await fetch('/api/batch', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        filepaths: filepaths,
-                        method: method
-                    })
-                });
-                
-                const processData = await processResponse.json();
-                
-                if (processData.success) {
-                    const resultsDiv = document.getElementById('batchResults');
-                    resultsDiv.innerHTML = `
-                        <h3>Résultats du traitement par lot</h3>
-                        <p>Total: ${processData.total} fichier(s)</p>
-                        <p>✅ Traités: ${processData.processed} fichier(s)</p>
-                    `;
-                    showStatus('success', `✅ ${processData.processed}/${processData.total} fichier(s) traité(s) avec succès!`);
-                } else {
-                    throw new Error(processData.error || 'Erreur lors du traitement par lot');
-                }
-                
-            } catch (error) {
-                showStatus('error', `❌ Erreur: ${error.message}`);
-            }
-        });
-    </script>
+    }
+
+    fileInput.addEventListener('change', function() {
+      handleFiles(this.files);
+      this.value = '';
+    });
+
+    uploadZone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      this.classList.add('dragover');
+    });
+    uploadZone.addEventListener('dragleave', function() { this.classList.remove('dragover'); });
+    uploadZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      this.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    loadConfig().then(() => { loadExcelData(); loadSourceFiles(); });
+  </script>
 </body>
 </html>

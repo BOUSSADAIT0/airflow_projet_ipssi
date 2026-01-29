@@ -16,6 +16,15 @@ CLIENT_SIRET = os.environ.get('CLIENT_SIRET', '')
 EXCEL_AVAILABLE = True
 PDF2IMAGE_AVAILABLE = False
 
+# Extracteur sémantique local (sans Ollama ni API)
+try:
+    from semantic_extractor import SemanticExtractor, to_invoice_data
+    _SEMANTIC_AVAILABLE = True
+except ImportError:
+    _SEMANTIC_AVAILABLE = False
+    SemanticExtractor = None
+    to_invoice_data = None
+
 class WebUICallbacks:
     """Callbacks pour l'interface web (remplace TkinterUICallbacks)"""
     def __init__(self):
@@ -108,7 +117,9 @@ class InvoiceProcessor:
         
         Args:
             filepath: Chemin vers le fichier (PDF ou image)
-            method: Méthode d'extraction ('ollama', 'tesseract', 'auto')
+            method: Méthode d'extraction ('openai', 'ollama', 'tesseract', 'semantic', 'auto')
+                   - 'openai': extraction via API OpenAI (texte → JSON structuré)
+                   - 'semantic': extraction 100% locale (regex + spaCy), PDF texte direct ou OCR
         
         Returns:
             dict: Résultat avec 'success', 'data', 'error'
@@ -121,49 +132,111 @@ class InvoiceProcessor:
         
         try:
             self.callbacks.update_progress(10, 100, "Lecture du fichier...")
-            
-            # Détecter le type de fichier
             file_ext = os.path.splitext(filepath)[1].lower()
-            
-            # Si c'est un PDF, essayer de le convertir en image
-            if file_ext == '.pdf':
-                self.callbacks.update_progress(20, 100, "Conversion PDF en image...")
-                image_path = self._convert_pdf_to_image(filepath)
-                if not image_path:
+            current_filepath = filepath
+
+            # Auto : priorité OpenAI si clé présente, sinon semantic ou ollama/tesseract
+            if method == 'auto':
+                if self.openai_available:
+                    method = 'openai'
+                elif _SEMANTIC_AVAILABLE:
+                    method = 'semantic'
+                else:
+                    method = 'tesseract' if not self.ollama_available else 'ollama'
+
+            # Méthode OpenAI : extraire le texte localement, puis un seul appel API pour obtenir un JSON
+            if method == 'openai':
+                if not self.openai_available:
                     return {
                         'success': False,
-                        'error': 'Impossible de convertir le PDF en image'
+                        'error': 'OPENAI_API_KEY non configurée (variable d\'environnement ou .env)'
                     }
-                filepath = image_path
-            
-            # Extraire le texte avec la méthode choisie
+                extracted_text = self._get_text_for_semantic(current_filepath, file_ext)
+                if not extracted_text or not extracted_text.strip():
+                    return {
+                        'success': False,
+                        'error': 'Aucun texte extrait du fichier (PDF/image vide ou OCR impossible)'
+                    }
+                self.callbacks.update_progress(50, 100, "Appel OpenAI pour extraction structurée...")
+                extracted_data = self._extract_with_openai(extracted_text)
+                if not extracted_data:
+                    return {
+                        'success': False,
+                        'error': 'OpenAI n\'a pas retourné de JSON valide'
+                    }
+                extracted_data['fichier_pdf'] = os.path.basename(filepath)
+                self.callbacks.update_progress(90, 100, "Enrichissement des données...")
+                if not extracted_data.get('siret'):
+                    extracted_data = self._enrich_with_siret(extracted_data)
+                self.callbacks.update_progress(100, 100, "Terminé!")
+                return {
+                    'success': True,
+                    'data': extracted_data,
+                    'filepath': current_filepath,
+                    'method_used': 'openai'
+                }
+
+            # Méthode sémantique : extraction locale (sans Ollama ni API)
+            if method == 'semantic':
+                if not _SEMANTIC_AVAILABLE:
+                    return {
+                        'success': False,
+                        'error': 'Module semantic_extractor non disponible'
+                    }
+                extracted_text = self._get_text_for_semantic(current_filepath, file_ext)
+                if not extracted_text or not extracted_text.strip():
+                    return {
+                        'success': False,
+                        'error': 'Aucun texte extrait du fichier'
+                    }
+                self.callbacks.update_progress(70, 100, "Extraction sémantique locale...")
+                structured = SemanticExtractor().structure_data(extracted_text)
+                extracted_data = to_invoice_data(structured)
+                self.callbacks.update_progress(90, 100, "Enrichissement des données...")
+                if not extracted_data.get('siret'):
+                    extracted_data = self._enrich_with_siret(extracted_data)
+                self.callbacks.update_progress(100, 100, "Terminé!")
+                return {
+                    'success': True,
+                    'data': extracted_data,
+                    'filepath': current_filepath,
+                    'method_used': 'semantic'
+                }
+
+            # Méthodes classiques : PDF → image si besoin, puis ollama ou tesseract
+            if file_ext == '.pdf':
+                self.callbacks.update_progress(20, 100, "Conversion PDF en image...")
+                app_logger.info(f"[DEBUG] Traitement PDF avec méthode {method}")
+                image_path = self._convert_pdf_to_image(filepath)
+                if not image_path:
+                    error_msg = f'Impossible de convertir le PDF en image. Vérifiez que pdf2image (avec poppler) ou PyMuPDF est installé.'
+                    app_logger.error(f"[DEBUG] {error_msg}")
+                    return {
+                        'success': False,
+                        'error': error_msg
+                    }
+                current_filepath = image_path
+                app_logger.info(f"[DEBUG] PDF converti en image: {image_path}")
+
             self.callbacks.update_progress(40, 100, f"Extraction avec {method}...")
-            extracted_text = self._extract_text(filepath, method)
-            
+            extracted_text = self._extract_text(current_filepath, method)
             if not extracted_text:
                 return {
                     'success': False,
                     'error': 'Aucun texte extrait du fichier'
                 }
-            
-            # Parser les données depuis le texte
             self.callbacks.update_progress(70, 100, "Analyse des données...")
             extracted_data = self._parse_invoice_data(extracted_text)
-            
-            # Enrichir avec SIRET si possible
             self.callbacks.update_progress(90, 100, "Enrichissement des données...")
             if not extracted_data.get('siret'):
                 extracted_data = self._enrich_with_siret(extracted_data)
-            
             self.callbacks.update_progress(100, 100, "Terminé!")
-            
             return {
                 'success': True,
                 'data': extracted_data,
-                'filepath': filepath,
+                'filepath': current_filepath,
                 'method_used': method
             }
-        
         except Exception as e:
             app_logger.error(f"Erreur lors du traitement de {filepath}: {e}", exc_info=True)
             return {
@@ -171,37 +244,172 @@ class InvoiceProcessor:
                 'error': str(e)
             }
     
+    def _extract_text_from_pdf(self, pdf_path, max_pages=10):
+        """
+        Extrait le texte directement d'un PDF (sans OCR).
+        Utilise PyMuPDF (fitz) si disponible. Utile pour les PDF avec texte sélectionnable.
+        """
+        try:
+            import fitz  # PyMuPDF
+            doc = fitz.open(pdf_path)
+            parts = []
+            for i in range(min(len(doc), max_pages)):
+                page = doc[i]
+                parts.append(page.get_text())
+            doc.close()
+            text = "\n".join(parts).strip()
+            return text if text else None
+        except ImportError:
+            app_logger.debug("PyMuPDF (fitz) non installé pour extraction texte PDF")
+            return None
+        except Exception as e:
+            app_logger.warning(f"Erreur extraction texte PDF: {e}")
+            return None
+
+    def _get_text_for_semantic(self, filepath, file_ext):
+        """
+        Récupère le texte pour l'extraction sémantique.
+        Pour un PDF : essaie d'abord l'extraction texte directe, sinon PDF→image puis Tesseract.
+        Pour une image : Tesseract OCR.
+        """
+        if file_ext == '.pdf':
+            self.callbacks.update_progress(25, 100, "Extraction texte PDF directe...")
+            text = self._extract_text_from_pdf(filepath)
+            if text and len(text.strip()) > 50:
+                return text
+            self.callbacks.update_progress(30, 100, "Conversion PDF en image (OCR)...")
+            image_path = self._convert_pdf_to_image(filepath)
+            if not image_path:
+                return None
+            self.callbacks.update_progress(45, 100, "OCR Tesseract...")
+            return self._extract_with_tesseract(image_path)
+        # Image
+        self.callbacks.update_progress(40, 100, "OCR Tesseract...")
+        return self._extract_with_tesseract(filepath)
+
+    # Prompt système unique : on explique une fois à l'IA le format JSON attendu.
+    _OPENAI_SYSTEM_PROMPT = """Tu es un assistant qui extrait les données de factures.
+À partir du texte brut d'une facture (français ou autre), extrais les champs suivants et retourne UNIQUEMENT un objet JSON valide, sans markdown ni commentaire.
+Clés attendues (utilise "" si absent) :
+- nom_client : nom ou raison sociale du client
+- nom_fournisseur : nom ou raison sociale du fournisseur / vendeur
+- date : date de la facture (format JJ/MM/AAAA ou AAAA-MM-JJ)
+- numero_facture : numéro de facture
+- montant_ht : montant HT (nombre, sans symbole)
+- tva : montant TVA ou taux TVA (nombre)
+- montant_ttc : montant TTC (nombre)
+- siret : SIRET (14 chiffres)
+- siren : SIREN (9 chiffres)
+- adresse_fournisseur : adresse du fournisseur
+- code_postal : code postal
+- ville : ville
+Réponds uniquement par le JSON, rien d'autre."""
+
+    def _extract_with_openai(self, invoice_text):
+        """
+        Un seul appel OpenAI : on envoie le texte de la facture, l'IA retourne un JSON structuré.
+        Le format de sortie est normalisé pour correspondre à export_to_excel.
+        """
+        api_key = os.environ.get('OPENAI_API_KEY')
+        if not api_key:
+            app_logger.warning("OPENAI_API_KEY manquante")
+            return None
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key)
+        except ImportError:
+            app_logger.warning("openai non installé: pip install openai")
+            return None
+        # Limiter la taille pour rester dans les limites de contexte
+        text = (invoice_text[:14000] + "...") if len(invoice_text) > 14000 else invoice_text
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": self._OPENAI_SYSTEM_PROMPT},
+                    {"role": "user", "content": f"Extrais les données de cette facture et retourne uniquement le JSON.\n\n{text}"}
+                ],
+                temperature=0.1,
+                max_tokens=1500,
+            )
+            raw = (response.choices[0].message.content or "").strip()
+            # Retirer un éventuel bloc markdown ```json ... ```
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.lower().startswith("json"):
+                    raw = raw[4:].strip()
+            data = json.loads(raw)
+            # Mapping vers le format attendu par export_to_excel
+            return {
+                "date": str(data.get("date") or data.get("date_facture") or ""),
+                "numero_facture": str(data.get("numero_facture") or ""),
+                "fournisseur": str(data.get("nom_fournisseur") or data.get("fournisseur") or ""),
+                "siren": str(data.get("siren") or ""),
+                "siret": str(data.get("siret") or ""),
+                "adresse_fournisseur": str(data.get("adresse_fournisseur") or data.get("adresse") or ""),
+                "code_postal": str(data.get("code_postal") or ""),
+                "ville": str(data.get("ville") or ""),
+                "id_client": str(data.get("nom_client") or data.get("client") or ""),
+                "total_ht": str(data.get("montant_ht") or data.get("total_ht") or ""),
+                "tva": str(data.get("tva") or ""),
+                "total_ttc": str(data.get("montant_ttc") or data.get("total_ttc") or ""),
+                "fichier_pdf": "",
+            }
+        except json.JSONDecodeError as e:
+            app_logger.error(f"OpenAI a retourné un JSON invalide: {e}")
+            return None
+        except Exception as e:
+            app_logger.error(f"Erreur appel OpenAI: {e}", exc_info=True)
+            return None
+
     def _convert_pdf_to_image(self, pdf_path):
-        """Convertit un PDF en image"""
+        """Convertit un PDF en image. Les images temporaires sont écrites dans /tmp/invoice_images (évite les erreurs de permission dans uploads/)."""
+        app_logger.info(f"[DEBUG] Conversion PDF en image: {pdf_path}")
+        tmp_dir = "/tmp/invoice_images"
+        os.makedirs(tmp_dir, exist_ok=True)
+        base_name = os.path.basename(pdf_path).replace('.pdf', '') + '_' + str(os.getpid()) + '_page1.png'
+        image_path = os.path.join(tmp_dir, base_name)
         try:
             # Essayer pdf2image d'abord
             try:
                 from pdf2image import convert_from_path
-                images = convert_from_path(pdf_path, first_page=1, last_page=1)
+                app_logger.info("[DEBUG] Tentative avec pdf2image...")
+                images = convert_from_path(pdf_path, first_page=1, last_page=1, dpi=200)
                 if images:
-                    image_path = pdf_path.replace('.pdf', '_page1.png')
                     images[0].save(image_path, 'PNG')
+                    app_logger.info(f"[DEBUG] ✓ Conversion réussie avec pdf2image: {image_path}")
                     return image_path
-            except ImportError:
-                pass
+                else:
+                    app_logger.warning("[DEBUG] pdf2image n'a retourné aucune image")
+            except ImportError as e:
+                app_logger.warning(f"[DEBUG] pdf2image non disponible: {e}")
+            except Exception as e:
+                app_logger.error(f"[DEBUG] Erreur avec pdf2image: {e}", exc_info=True)
             
             # Fallback: utiliser PyMuPDF (fitz)
             try:
                 import fitz  # PyMuPDF
+                app_logger.info("[DEBUG] Tentative avec PyMuPDF (fitz)...")
                 doc = fitz.open(pdf_path)
+                if len(doc) == 0:
+                    app_logger.error("[DEBUG] PDF vide ou corrompu")
+                    doc.close()
+                    return None
                 page = doc[0]
-                pix = page.get_pixmap()
-                image_path = pdf_path.replace('.pdf', '_page1.png')
+                pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))  # 2x zoom pour meilleure qualité
                 pix.save(image_path)
                 doc.close()
+                app_logger.info(f"[DEBUG] ✓ Conversion réussie avec PyMuPDF: {image_path}")
                 return image_path
-            except ImportError:
-                pass
+            except ImportError as e:
+                app_logger.warning(f"[DEBUG] PyMuPDF non disponible: {e}")
+            except Exception as e:
+                app_logger.error(f"[DEBUG] Erreur avec PyMuPDF: {e}", exc_info=True)
             
-            app_logger.warning("Aucune bibliothèque PDF disponible (pdf2image ou PyMuPDF)")
+            app_logger.error("[DEBUG] Aucune bibliothèque PDF disponible (pdf2image ou PyMuPDF)")
             return None
         except Exception as e:
-            app_logger.error(f"Erreur lors de la conversion PDF: {e}")
+            app_logger.error(f"[DEBUG] Erreur générale lors de la conversion PDF: {e}", exc_info=True)
             return None
     
     def _extract_text(self, filepath, method='auto'):
