@@ -149,7 +149,6 @@ Le projet peut être orchestré avec **Apache Airflow** pour le traitement par l
 
 ## Auteurs
 
-**FARAJI SAFAA**  
 **CHAHOUB NOUHAILA**  
 
 

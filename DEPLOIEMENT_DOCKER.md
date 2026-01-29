@@ -78,8 +78,8 @@ sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker
 sudo chmod +x /usr/local/bin/docker-compose
 
 # 4. Cloner le projet
-git clone https://github.com/safaafaraji/Inteligent_OCR.git
-cd Inteligent_OCR
+git clone https://github.com/BOUSSADAIT0/airflow_projet_ipssi.git
+cd airflow_projet_ipssi
 
 # 5. Démarrer
 docker-compose up -d

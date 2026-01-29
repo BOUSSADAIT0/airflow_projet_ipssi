@@ -95,17 +95,6 @@ demo_user = {
 }
 users_db["demo"] = demo_user
 
-# Utilisateur personnalisé
-safaa_user = {
-    "id": 2,
-    "username": "safaafaraji01@gmail.com",
-    "email": "safaafaraji01@gmail.com",
-    "full_name": "Safaa Faraji",
-    "hashed_password": get_password_hash("safae"),
-    "is_active": True
-}
-users_db["safaafaraji01@gmail.com"] = safaa_user
-
 # Dépendance pour l'authentification
 async def get_current_user(authorization: Optional[str] = Header(None)):
     if not authorization:
