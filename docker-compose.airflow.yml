@@ -35,7 +35,8 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
-      AIRFLOW_UID: "50000"
+      # Sous Windows/WSL : 0 évite les erreurs de permissions sur les volumes
+      AIRFLOW_UID: "0"
       # URL de l'API OCR (nom du service backend dans Docker)
       OCR_API_URL: http://backend:8000
       # Inbox = même dossier que les uploads de l'app (dès qu'un fichier est déposé, le sensor le voit)
@@ -50,6 +51,7 @@ services:
     ports:
       - "8080:8080"
     command: airflow standalone
+    restart: unless-stopped
     networks:
       - ocr-network
 
