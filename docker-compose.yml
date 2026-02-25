@@ -85,12 +85,45 @@ services:
       - ./airflow/dags:/opt/airflow/dags
       - ./backend/uploads:/opt/airflow/inbox
       - airflow_logs:/opt/airflow/logs
+      - ./hdfs:/opt/airflow/hdfs
     ports:
       - "8080:8080"
     command: airflow standalone
     restart: unless-stopped
     networks:
       - ocr-network
+
+  hadoop-namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop-namenode
+    environment:
+      - CLUSTER_NAME=hadoop-cluster
+      - CORE_CONF_fs_defaultFS=hdfs://hadoop-namenode:8020
+      - HDFS_CONF_dfs_replication=1
+      - HDFS_CONF_dfs_webhdfs_enabled=true
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+      - ./hdfs:/data
+    ports:
+      - "9870:9870"   # WebHDFS / NameNode UI
+      - "8020:8020"   # HDFS RPC
+    networks:
+      - ocr-network
+    restart: unless-stopped
+
+  hadoop-datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop-datanode
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://hadoop-namenode:8020
+      - HDFS_CONF_dfs_replication=1
+    volumes:
+      - hadoop_datanode:/hadoop/dfs/data
+    networks:
+      - ocr-network
+    depends_on:
+      - hadoop-namenode
+    restart: unless-stopped
 
 networks:
   ocr-network:
@@ -102,3 +135,5 @@ volumes:
   exports:
   airflow_postgres_data:
   airflow_logs:
+  hadoop_namenode:
+  hadoop_datanode:
