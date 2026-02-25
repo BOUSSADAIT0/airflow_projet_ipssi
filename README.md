@@ -137,6 +137,13 @@ Le projet peut être orchestré avec **Apache Airflow** pour le traitement par l
   → Airflow : http://localhost:8080 (admin / admin)
 - **Documentation** : voir [AIRFLOW.md](AIRFLOW.md) pour la configuration et l'utilisation du DAG `ocr_batch_pipeline`.
 
+##  Architecture Big Data (projet académique)
+
+Le projet inclut une **architecture Big Data** complète : ingestion multi-sources (fichiers, DB, API), traitement batch (agrégations vers zone curated) et temps réel (Kafka), stockage distribué (HDFS), exposition analytique (API `/api/analytics`) et monitoring (Prometheus + Grafana).
+
+- **Lancer la stack complète** : `docker-compose -f docker-compose.yml -f docker-compose.bigdata.yml up -d`
+- **Documentation** : [docs/ARCHITECTURE_BIG_DATA.md](docs/ARCHITECTURE_BIG_DATA.md) et [docs/README_BIG_DATA.md](docs/README_BIG_DATA.md)
+
 ---
 
 ##  Stack Technique

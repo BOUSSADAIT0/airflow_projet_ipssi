@@ -1,0 +1,24 @@
+# Règles d'alerte Prometheus (exemple)
+# À inclure dans prometheus.yml avec : rule_files: [ "prometheus_alerts.yml" ]
+# Puis configurer Alertmanager ou les notifications Grafana pour envoi email/Slack.
+
+groups:
+  - name: bigdata_pipeline
+    interval: 30s
+    rules:
+      - alert: BackendDown
+        expr: up{job="backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend API indisponible"
+          description: "Le backend OCR/Analytics ne répond pas depuis 1 minute."
+
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus indisponible"

@@ -1,0 +1,6 @@
+FROM python:3.11-slim
+WORKDIR /app
+RUN pip install --no-cache-dir kafka-python
+COPY scripts/kafka_consumer_factures.py /app/consumer.py
+ENV PYTHONUNBUFFERED=1
+CMD ["python", "/app/consumer.py"]

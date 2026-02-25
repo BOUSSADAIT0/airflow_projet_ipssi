@@ -2,181 +2,181 @@
   {
     "id_facture": 1,
     "date_facture": "2026-02-25",
-    "id_client": 3,
-    "montant_ht": 446.14,
-    "montant_ttc": 594.99,
-    "pays": "IT",
-    "mode_paiement": "VIREMENT"
+    "id_client": 10,
+    "montant_ht": 179.54,
+    "montant_ttc": 474.6,
+    "pays": "ES",
+    "mode_paiement": "CB"
   },
   {
     "id_facture": 2,
     "date_facture": "2026-02-25",
     "id_client": 2,
-    "montant_ht": 449.74,
-    "montant_ttc": 31.48,
-    "pays": "DE",
+    "montant_ht": 168.4,
+    "montant_ttc": 529.2,
+    "pays": "FR",
     "mode_paiement": "VIREMENT"
   },
   {
     "id_facture": 3,
     "date_facture": "2026-02-25",
-    "id_client": 3,
-    "montant_ht": 368.44,
-    "montant_ttc": 300.79,
-    "pays": "ES",
-    "mode_paiement": "CB"
+    "id_client": 9,
+    "montant_ht": 413.87,
+    "montant_ttc": 395.26,
+    "pays": "FR",
+    "mode_paiement": "VIREMENT"
   },
   {
     "id_facture": 4,
     "date_facture": "2026-02-25",
-    "id_client": 2,
-    "montant_ht": 196.64,
-    "montant_ttc": 212.13,
-    "pays": "FR",
-    "mode_paiement": "PAYPAL"
+    "id_client": 9,
+    "montant_ht": 216.67,
+    "montant_ttc": 381.62,
+    "pays": "IT",
+    "mode_paiement": "CB"
   },
   {
     "id_facture": 5,
     "date_facture": "2026-02-25",
-    "id_client": 10,
-    "montant_ht": 445.1,
-    "montant_ttc": 342.88,
+    "id_client": 3,
+    "montant_ht": 53.5,
+    "montant_ttc": 258.11,
     "pays": "IT",
-    "mode_paiement": "PAYPAL"
+    "mode_paiement": "CHEQUE"
   },
   {
     "id_facture": 6,
     "date_facture": "2026-02-25",
-    "id_client": 7,
-    "montant_ht": 392.01,
-    "montant_ttc": 408.58,
+    "id_client": 4,
+    "montant_ht": 283.72,
+    "montant_ttc": 349.29,
     "pays": "FR",
     "mode_paiement": "CB"
   },
   {
     "id_facture": 7,
     "date_facture": "2026-02-25",
-    "id_client": 4,
-    "montant_ht": 391.93,
-    "montant_ttc": 192.41,
-    "pays": "DE",
-    "mode_paiement": "VIREMENT"
-  },
-  {
-    "id_facture": 8,
-    "date_facture": "2026-02-25",
-    "id_client": 8,
-    "montant_ht": 258.68,
-    "montant_ttc": 57.73,
+    "id_client": 7,
+    "montant_ht": 418.86,
+    "montant_ttc": 312.14,
     "pays": "FR",
     "mode_paiement": "PAYPAL"
   },
   {
+    "id_facture": 8,
+    "date_facture": "2026-02-25",
+    "id_client": 4,
+    "montant_ht": 14.3,
+    "montant_ttc": 291.27,
+    "pays": "IT",
+    "mode_paiement": "CHEQUE"
+  },
+  {
     "id_facture": 9,
     "date_facture": "2026-02-25",
-    "id_client": 9,
-    "montant_ht": 319.11,
-    "montant_ttc": 331.32,
+    "id_client": 8,
+    "montant_ht": 115.26,
+    "montant_ttc": 583.45,
     "pays": "IT",
-    "mode_paiement": "PAYPAL"
+    "mode_paiement": "VIREMENT"
   },
   {
     "id_facture": 10,
     "date_facture": "2026-02-25",
-    "id_client": 3,
-    "montant_ht": 380.04,
-    "montant_ttc": 190.05,
-    "pays": "ES",
-    "mode_paiement": "PAYPAL"
+    "id_client": 2,
+    "montant_ht": 304.41,
+    "montant_ttc": 575.77,
+    "pays": "DE",
+    "mode_paiement": "VIREMENT"
   },
   {
     "id_facture": 11,
     "date_facture": "2026-02-25",
-    "id_client": 1,
-    "montant_ht": 206.61,
-    "montant_ttc": 12.43,
+    "id_client": 2,
+    "montant_ht": 311.72,
+    "montant_ttc": 331.99,
     "pays": "IT",
-    "mode_paiement": "PAYPAL"
+    "mode_paiement": "CB"
   },
   {
     "id_facture": 12,
     "date_facture": "2026-02-25",
     "id_client": 6,
-    "montant_ht": 270.38,
-    "montant_ttc": 317.16,
+    "montant_ht": 382.99,
+    "montant_ttc": 315.6,
     "pays": "DE",
-    "mode_paiement": "CB"
+    "mode_paiement": "VIREMENT"
   },
   {
     "id_facture": 13,
     "date_facture": "2026-02-25",
-    "id_client": 7,
-    "montant_ht": 385.69,
-    "montant_ttc": 493.5,
-    "pays": "IT",
-    "mode_paiement": "CB"
+    "id_client": 6,
+    "montant_ht": 77.84,
+    "montant_ttc": 348.89,
+    "pays": "ES",
+    "mode_paiement": "VIREMENT"
   },
   {
     "id_facture": 14,
     "date_facture": "2026-02-25",
-    "id_client": 6,
-    "montant_ht": 337.61,
-    "montant_ttc": 383.4,
-    "pays": "FR",
-    "mode_paiement": "VIREMENT"
+    "id_client": 10,
+    "montant_ht": 126.95,
+    "montant_ttc": 182.6,
+    "pays": "IT",
+    "mode_paiement": "CHEQUE"
   },
   {
     "id_facture": 15,
     "date_facture": "2026-02-25",
-    "id_client": 5,
-    "montant_ht": 21.4,
-    "montant_ttc": 562.66,
-    "pays": "IT",
-    "mode_paiement": "VIREMENT"
+    "id_client": 6,
+    "montant_ht": 216.51,
+    "montant_ttc": 392.52,
+    "pays": "ES",
+    "mode_paiement": "PAYPAL"
   },
   {
     "id_facture": 16,
     "date_facture": "2026-02-25",
     "id_client": 10,
-    "montant_ht": 416.41,
-    "montant_ttc": 203.74,
+    "montant_ht": 429.26,
+    "montant_ttc": 421.14,
     "pays": "DE",
     "mode_paiement": "CB"
   },
   {
     "id_facture": 17,
     "date_facture": "2026-02-25",
-    "id_client": 4,
-    "montant_ht": 314.14,
-    "montant_ttc": 352.46,
-    "pays": "DE",
-    "mode_paiement": "CHEQUE"
+    "id_client": 7,
+    "montant_ht": 13.19,
+    "montant_ttc": 184.06,
+    "pays": "IT",
+    "mode_paiement": "CB"
   },
   {
     "id_facture": 18,
     "date_facture": "2026-02-25",
-    "id_client": 8,
-    "montant_ht": 11.69,
-    "montant_ttc": 283.01,
+    "id_client": 7,
+    "montant_ht": 54.11,
+    "montant_ttc": 513.73,
     "pays": "ES",
-    "mode_paiement": "CB"
+    "mode_paiement": "PAYPAL"
   },
   {
     "id_facture": 19,
     "date_facture": "2026-02-25",
-    "id_client": 5,
-    "montant_ht": 81.18,
-    "montant_ttc": 450.04,
-    "pays": "DE",
-    "mode_paiement": "PAYPAL"
+    "id_client": 3,
+    "montant_ht": 136.76,
+    "montant_ttc": 432.24,
+    "pays": "ES",
+    "mode_paiement": "VIREMENT"
   },
   {
     "id_facture": 20,
     "date_facture": "2026-02-25",
-    "id_client": 1,
-    "montant_ht": 216.03,
-    "montant_ttc": 285.94,
-    "pays": "DE",
+    "id_client": 5,
+    "montant_ht": 145.77,
+    "montant_ttc": 369.16,
+    "pays": "ES",
     "mode_paiement": "CB"
   }
 ]

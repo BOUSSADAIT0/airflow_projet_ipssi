@@ -8,6 +8,8 @@ from app.database import init_db
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.ocr import router as ocr_router
 from app.api.auth import router as auth_router
+from app.api.analytics import router as analytics_router
+from app.api.datalake import router as datalake_router
 
 app = FastAPI(title="OCR Intelligent API")
 
@@ -103,6 +105,8 @@ app.add_middleware(
 # Routes
 app.include_router(auth_router)
 app.include_router(ocr_router)
+app.include_router(analytics_router)
+app.include_router(datalake_router)
 
 @app.get("/")
 async def root():
@@ -142,6 +146,22 @@ async def health():
             "endpoints_available": True
         }
     }
+
+
+@app.get("/metrics")
+async def metrics():
+    """Endpoint Prometheus pour le monitoring Big Data."""
+    try:
+        from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+        from fastapi.responses import Response
+        return Response(
+            content=generate_latest(),
+            media_type=CONTENT_TYPE_LATEST,
+        )
+    except ImportError:
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse("# prometheus_client non installé\n", status_code=200)
+
 
 # Servir les fichiers statiques
 app.mount("/static", StaticFiles(directory="static"), name="static")

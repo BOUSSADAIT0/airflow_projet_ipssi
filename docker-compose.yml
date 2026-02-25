@@ -15,9 +15,12 @@ services:
       - ./backend/uploads:/app/uploads
       - ./backend/results:/app/results
       - ./backend/exports:/app/exports
+      - ./hdfs:/app/data/hdfs
     environment:
       - PYTHONUNBUFFERED=1
       - SECRET_KEY=ocr-intelligent-secret-key-2024-production
+      - HDFS_BASE=/app/data/hdfs
+      - CURATED_PATH=/app/data/hdfs/curated
     restart: unless-stopped
     networks:
       - ocr-network

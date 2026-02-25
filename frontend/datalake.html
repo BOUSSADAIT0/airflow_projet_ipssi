@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Lake / HDFS - OCR Intelligent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center flex-wrap gap-2">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-file-alt text-white text-xl"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-900">OCR Intelligent</h1>
+                </div>
+                <nav class="flex items-center gap-2 flex-wrap">
+                    <a href="index.html" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded">Accueil</a>
+                    <a href="upload.html" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded">Upload OCR</a>
+                    <a href="history.html" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded">Historique</a>
+                    <a href="datalake.html" class="bg-emerald-600 text-white px-4 py-2 rounded-lg">Data Lake</a>
+                    <a href="analytics.html" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded">Analytics</a>
+                    <a href="http://localhost:9870" target="_blank" rel="noopener" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800">
+                        <i class="fas fa-database mr-2"></i>HDFS
+                    </a>
+                    <span id="usernameDisplay" class="text-gray-600 px-2"></span>
+                    <button onclick="logout()" class="text-red-600 hover:text-red-800 px-3 py-2 rounded"><i class="fas fa-sign-out-alt mr-1"></i>Déconnexion</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
+                <i class="fas fa-database text-emerald-600"></i>
+                Data Lake & stockage HDFS
+            </h2>
+            <p class="mt-2 text-gray-600">Données brutes (raw), enrichies (clean) et agrégations (curated). Stockage distribué synchronisable avec le cluster HDFS.</p>
+        </div>
+
+        <!-- Lien HDFS -->
+        <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <p class="font-semibold text-emerald-800">Interface Web HDFS (NameNode)</p>
+                <p class="text-sm text-emerald-700">Parcourir le cluster HDFS et le datalake (<code>/datalake</code>)</p>
+            </div>
+            <a href="http://localhost:9870" target="_blank" rel="noopener" class="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 inline-flex items-center gap-2">
+                <i class="fas fa-external-link-alt"></i> Ouvrir HDFS (port 9870)
+            </a>
+        </div>
+
+        <!-- Structure du Data Lake -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <i class="fas fa-sitemap text-blue-600"></i>
+                Structure du Data Lake
+            </h3>
+            <p class="text-gray-600 text-sm mb-4">Zones raw (brut), clean (enrichi), curated (analytics). Les fichiers sont stockés localement et peuvent être synchronisés vers le cluster HDFS.</p>
+            <div id="structureLoading" class="text-center py-8 text-gray-500">
+                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                <p>Chargement de la structure...</p>
+            </div>
+            <div id="structureError" class="hidden bg-red-50 border border-red-200 rounded-lg p-4 text-red-800"></div>
+            <div id="structureTree" class="hidden space-y-4"></div>
+        </div>
+
+        <!-- Déposer un fichier dans le Data Lake -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <i class="fas fa-cloud-upload-alt text-emerald-600"></i>
+                Déposer un fichier dans le Data Lake (zone raw)
+            </h3>
+            <p class="text-gray-600 text-sm mb-4">CSV ou JSON. Le fichier sera enregistré dans <code>raw/factures/files/&lt;date&gt;/</code> et pourra être synchronisé vers HDFS.</p>
+            <div class="border-2 border-dashed border-emerald-300 rounded-xl p-8 text-center">
+                <input type="file" id="datalakeFileInput" class="hidden" accept=".csv,.json">
+                <div id="datalakeDropZone" class="cursor-pointer">
+                    <i class="fas fa-file-csv text-4xl text-emerald-500 mb-2"></i>
+                    <p class="text-gray-700 font-medium">Cliquez ou glissez-déposez un fichier CSV ou JSON</p>
+                    <p class="text-sm text-gray-500 mt-1">Max 50 MB</p>
+                </div>
+                <div id="datalakeFileInfo" class="hidden mt-4 p-3 bg-emerald-50 rounded-lg flex items-center justify-between">
+                    <span id="datalakeFileName" class="font-medium"></span>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="uploadToDatalake()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700">Envoyer vers le Data Lake</button>
+                        <button type="button" onclick="clearDatalakeFile()" class="text-gray-600 hover:text-red-600">Annuler</button>
+                    </div>
+                </div>
+            </div>
+            <div id="datalakeUploadResult" class="hidden mt-4 p-4 rounded-lg"></div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8000' : ('http://' + window.location.hostname + ':8000');
+        let selectedDatalakeFile = null;
+
+        document.getElementById('usernameDisplay').textContent = localStorage.getItem('ocr_user') ? `(${localStorage.getItem('ocr_user')})` : '';
+
+        document.getElementById('datalakeDropZone').addEventListener('click', () => document.getElementById('datalakeFileInput').click());
+        document.getElementById('datalakeFileInput').addEventListener('change', (e) => {
+            const f = e.target.files[0];
+            if (!f) return;
+            const ext = (f.name || '').toLowerCase().split('.').pop();
+            if (ext !== 'csv' && ext !== 'json') {
+                alert('Seuls les fichiers CSV et JSON sont acceptés.');
+                return;
+            }
+            if (f.size > 50 * 1024 * 1024) {
+                alert('Fichier trop volumineux (max 50 MB).');
+                return;
+            }
+            selectedDatalakeFile = f;
+            document.getElementById('datalakeFileName').textContent = f.name + ' (' + (f.size / 1024).toFixed(1) + ' KB)';
+            document.getElementById('datalakeFileInfo').classList.remove('hidden');
+            document.getElementById('datalakeUploadResult').classList.add('hidden');
+        });
+
+        function clearDatalakeFile() {
+            selectedDatalakeFile = null;
+            document.getElementById('datalakeFileInput').value = '';
+            document.getElementById('datalakeFileInfo').classList.add('hidden');
+            document.getElementById('datalakeUploadResult').classList.add('hidden');
+        }
+
+        async function uploadToDatalake() {
+            if (!selectedDatalakeFile) return;
+            const resultEl = document.getElementById('datalakeUploadResult');
+            resultEl.className = 'mt-4 p-4 rounded-lg';
+            resultEl.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Envoi en cours...';
+            resultEl.classList.remove('hidden', 'bg-red-50', 'bg-green-50');
+            try {
+                const form = new FormData();
+                form.append('file', selectedDatalakeFile);
+                const r = await fetch(API_BASE + '/api/datalake/upload', { method: 'POST', body: form });
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok) {
+                    resultEl.classList.add('bg-red-50');
+                    resultEl.innerHTML = '<i class="fas fa-exclamation-circle text-red-600 mr-2"></i>' + (data.detail || 'Erreur ' + r.status);
+                    return;
+                }
+                resultEl.classList.add('bg-green-50');
+                resultEl.innerHTML = '<i class="fas fa-check-circle text-green-600 mr-2"></i>Fichier déposé : <code>' + (data.path || '') + '</code>. Rechargez la structure ci-dessus.';
+                clearDatalakeFile();
+                loadStructure();
+            } catch (e) {
+                resultEl.classList.add('bg-red-50');
+                resultEl.innerHTML = '<i class="fas fa-exclamation-circle text-red-600 mr-2"></i>' + e.message;
+            }
+        }
+
+        function renderTree(nodes, level = 0) {
+            if (!nodes || !nodes.length) return '';
+            let html = '<ul class="' + (level ? 'pl-4 border-l-2 border-gray-200 ml-2' : '') + '">';
+            nodes.forEach(n => {
+                const isDir = n.type === 'dir';
+                const icon = isDir ? 'fa-folder text-amber-500' : 'fa-file text-gray-400';
+                const size = n.size != null ? ' <span class="text-gray-400 text-sm">(' + (n.size < 1024 ? n.size + ' o' : (n.size / 1024).toFixed(1) + ' Ko') + ')</span>' : '';
+                html += '<li class="py-1"><i class="fas ' + icon + ' mr-2 w-4"></i>' + n.name + size;
+                if (isDir && n.children && n.children.length) html += renderTree(n.children, level + 1);
+                html += '</li>';
+            });
+            html += '</ul>';
+            return html;
+        }
+
+        async function loadStructure() {
+            const loading = document.getElementById('structureLoading');
+            const err = document.getElementById('structureError');
+            const tree = document.getElementById('structureTree');
+            loading.classList.remove('hidden');
+            err.classList.add('hidden');
+            tree.classList.add('hidden');
+            try {
+                const r = await fetch(API_BASE + '/api/datalake/structure');
+                const data = await r.json();
+                loading.classList.add('hidden');
+                if (data.message && !data.zones) {
+                    tree.classList.remove('hidden');
+                    tree.innerHTML = '<p class="text-gray-500">' + data.message + '</p>';
+                    return;
+                }
+                let html = '';
+                for (const [zoneName, zone] of Object.entries(data.zones || {})) {
+                    const desc = (zone.description || '').trim();
+                    html += '<div class="border rounded-lg p-4 bg-gray-50"><p class="font-bold text-gray-800 mb-2">/' + zoneName + (desc ? ' — ' + desc : '') + '</p>';
+                    html += renderTree(zone.tree || []) + '</div>';
+                }
+                tree.innerHTML = html;
+                tree.classList.remove('hidden');
+            } catch (e) {
+                loading.classList.add('hidden');
+                err.textContent = e.message;
+                err.classList.remove('hidden');
+            }
+        }
+
+        loadStructure();
+
+        function logout() {
+            localStorage.removeItem('ocr_token');
+            localStorage.removeItem('ocr_user');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

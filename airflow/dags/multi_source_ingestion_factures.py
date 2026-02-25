@@ -55,31 +55,36 @@ def _ensure_hdfs_dir(hdfs_path: str) -> None:
     resp.raise_for_status()
 
 
-def _upload_file_to_hdfs(local_path: str, hdfs_path: str) -> None:
+def _upload_file_to_hdfs(local_path: str, hdfs_path: str, max_retries: int = 3) -> None:
     """
-    Envoie un fichier local vers le cluster HDFS en utilisant WebHDFS.
+    Envoie un fichier local vers le cluster HDFS en utilisant WebHDFS (avec retries).
     hdfs_path est un chemin absolu HDFS, par ex. /datalake/raw/factures/api/2026-02-25/file.json
     """
-    # S'assurer que le dossier existe côté HDFS
-    parent_dir = os.path.dirname(hdfs_path)
-    _ensure_hdfs_dir(parent_dir)
-
-    # Étape 1 : requête CREATE pour obtenir l'URL de redirection
-    create_resp = requests.put(
-        f"{WEBHDFS_BASE}{hdfs_path}",
-        params={"op": "CREATE", "overwrite": "true", "user.name": "hdfs"},
-        allow_redirects=False,
-        timeout=30,
-    )
-    create_resp.raise_for_status()
-    location = create_resp.headers.get("Location")
-    if not location:
-        raise RuntimeError("Pas d'en-tête Location retourné par WebHDFS pour l'upload.")
-
-    # Étape 2 : upload réel du contenu
-    with open(local_path, "rb") as f:
-        data_resp = requests.put(location, data=f, timeout=60)
-    data_resp.raise_for_status()
+    import time
+    last_error = None
+    for attempt in range(max_retries):
+        try:
+            parent_dir = os.path.dirname(hdfs_path)
+            _ensure_hdfs_dir(parent_dir)
+            create_resp = requests.put(
+                f"{WEBHDFS_BASE}{hdfs_path}",
+                params={"op": "CREATE", "overwrite": "true", "user.name": "hdfs"},
+                allow_redirects=False,
+                timeout=30,
+            )
+            create_resp.raise_for_status()
+            location = create_resp.headers.get("Location")
+            if not location:
+                raise RuntimeError("Pas d'en-tête Location retourné par WebHDFS pour l'upload.")
+            with open(local_path, "rb") as f:
+                data_resp = requests.put(location, data=f, timeout=60)
+            data_resp.raise_for_status()
+            return
+        except Exception as e:
+            last_error = e
+            if attempt < max_retries - 1:
+                time.sleep(2 ** attempt)
+    raise last_error
 
 
 def ingest_from_files(**context):
@@ -300,6 +305,46 @@ def enrich_api_invoices_with_country(**context):
     }
 
 
+def publish_enriched_to_kafka(**context):
+    """
+    Publie les factures enrichies vers Kafka (topic factures-enriched) pour le flux temps réel.
+    Optionnel : ne fait rien si Kafka n'est pas configuré (variable kafka_bootstrap_servers vide).
+    """
+    try:
+        from airflow.models import Variable
+        bootstrap = Variable.get("kafka_bootstrap_servers", default_var="")
+        if not bootstrap:
+            return {"status": "skipped", "reason": "kafka_bootstrap_servers non configuré"}
+    except Exception:
+        return {"status": "skipped", "reason": "Variable non disponible"}
+
+    try:
+        from kafka import KafkaProducer
+    except ImportError:
+        return {"status": "skipped", "reason": "kafka-python non installé"}
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    clean_path = os.path.join(CLEAN_BASE, "api", today, f"factures_api_enriched_{today}.json")
+    if not os.path.exists(clean_path):
+        return {"status": "skipped", "reason": "fichier clean absent"}
+
+    with open(clean_path, "r", encoding="utf-8") as f:
+        enriched = json.load(f)
+
+    producer = KafkaProducer(
+        bootstrap_servers=bootstrap.split(","),
+        value_serializer=lambda v: json.dumps(v, ensure_ascii=False).encode("utf-8"),
+    )
+    topic = "factures-enriched"
+    sent = 0
+    for inv in enriched:
+        producer.send(topic, value=inv)
+        sent += 1
+    producer.flush()
+    producer.close()
+    return {"status": "ok", "topic": topic, "sent": sent}
+
+
 default_args = {
     "owner": "data-engineer",
     "depends_on_past": False,
@@ -335,5 +380,12 @@ with DAG(
         python_callable=enrich_api_invoices_with_country,
     )
 
-    ingest_files_task >> ingest_db_task >> ingest_api_task >> enrich_api_task
+    publish_kafka_task = PythonOperator(
+        task_id="publish_enriched_to_kafka",
+        python_callable=publish_enriched_to_kafka,
+    )
+
+    # Ingestion multi-sources en parallèle ; enrichissement API après la source API
+    [ingest_files_task, ingest_db_task, ingest_api_task] >> enrich_api_task
+    enrich_api_task >> publish_kafka_task
 
