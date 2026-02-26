@@ -1,0 +1,44 @@
+{
+  "success": true,
+  "process_id": "e6dced10-869c-4b3c-9fcf-80b617864a50",
+  "filename": "Booking.com_ Confirmation.pdf",
+  "document_type": "invoice",
+  "total_pages": 1,
+  "text": "--- Page 1 ---\n31/01/2026 00:13 Voici votre reçu\n\nBooking.com Numéro De Réservation\n\n5471123112\nVoici votre reçu\n\nVOS COORDONNÉES\n\nPrénom et nom rayana attaoui\nAdresse e-mail attaouirayana123@gmail.com\nDate 30 janv. 2026\n\nDETAILS DE LA RESERVATION\n\nNom de l'établissement COMFORT INN ROMA TERMINI\nAdresse de l'établissement 17 Via Vicenza\n\nRoma, ltaly\n\n00185\nNuméro de réservation 5471123112\nArrivée samedi 31 janvier 2026\nDépart dimanche 1 février 2026\nMontant payé le 30 janv. 2026 € 18,48\n\nVotre reçu est généré automatiquement.\nil s'agit d'une preuve de votre transaction qui ne peut pas être utilisée pour demander le\n\nremboursement de la TVA.\nVeuillez noter que ceci n’est pas une facture.\n\nSeul l'établissement peut émettre une facture valable à des fins fiscales.\n\nhttps://secure.booking.com/confirmation.fr.html?aid=397594 &label=gog235jc- 10CAE oggl46AdIDVgDaE2IAQG YATO4ARIIAQZYAQPOAQH4AQGI.... 1/1\n\n\n",
+  "pages": [
+    {
+      "text": "31/01/2026 00:13 Voici votre reçu\n\nBooking.com Numéro De Réservation\n\n5471123112\nVoici votre reçu\n\nVOS COORDONNÉES\n\nPrénom et nom rayana attaoui\nAdresse e-mail attaouirayana123@gmail.com\nDate 30 janv. 2026\n\nDETAILS DE LA RESERVATION\n\nNom de l'établissement COMFORT INN ROMA TERMINI\nAdresse de l'établissement 17 Via Vicenza\n\nRoma, ltaly\n\n00185\nNuméro de réservation 5471123112\nArrivée samedi 31 janvier 2026\nDépart dimanche 1 février 2026\nMontant payé le 30 janv. 2026 € 18,48\n\nVotre reçu est généré automatiquement.\nil s'agit d'une preuve de votre transaction qui ne peut pas être utilisée pour demander le\n\nremboursement de la TVA.\nVeuillez noter que ceci n’est pas une facture.\n\nSeul l'établissement peut émettre une facture valable à des fins fiscales.\n\nhttps://secure.booking.com/confirmation.fr.html?aid=397594 &label=gog235jc- 10CAE oggl46AdIDVgDaE2IAQG YATO4ARIIAQZYAQPOAQH4AQGI.... 1/1\n",
+      "confidence": 0.92,
+      "word_count": 119,
+      "page": 1
+    }
+  ],
+  "personal_info": {
+    "names": [],
+    "emails": [
+      "attaouirayana123@gmail.com"
+    ],
+    "phones": [
+      "5471123112",
+      "5471123112"
+    ],
+    "dates": [
+      "31/01/2026"
+    ],
+    "addresses": [],
+    "amounts": [
+      "2026 €"
+    ]
+  },
+  "structured_data": {
+    "type": "Invoice",
+    "invoice_number": "Seul",
+    "date": "31/01/2026",
+    "total_amount": null,
+    "tax_amount": null,
+    "vendor_name": null
+  },
+  "average_confidence": 0.92,
+  "processing_date": "2026-02-26T08:21:27.738392",
+  "user": "attaoui"
+}
