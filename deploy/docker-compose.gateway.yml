@@ -1,0 +1,38 @@
+# Passe tout derrière une seule URL (port 80) pour partager un lien au prof.
+# Lancer (base) : docker-compose -f docker-compose.yml -f deploy/docker-compose.gateway.yml up -d
+# Lancer (avec Grafana) : docker-compose -f docker-compose.yml -f docker-compose.bigdata.yml -f deploy/docker-compose.gateway.yml up -d
+# Puis ouvrir : http://VOTRE_IP ou http://votre-domaine
+
+version: '3.8'
+
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.gateway
+    container_name: ocr-gateway
+    ports:
+      - "8888:80"    # Port 8888 (80 et 8080 déjà pris). Accès : http://domaine:8888
+    depends_on:
+      - frontend
+      - backend
+      - airflow
+      - hadoop-namenode
+    networks:
+      - ocr-network
+    restart: unless-stopped
+
+  frontend:
+    ports: []   # plus exposé directement, accès via gateway
+
+  backend:
+    ports: []   # accès via gateway /api/
+
+  airflow:
+    ports: []   # accès via gateway /airflow/
+    environment:
+      # Utiliser le domaine si .env contient PUBLIC_HOST=monprojet.example.com
+      AIRFLOW__WEBSERVER__BASE_URL: http://${PUBLIC_HOST:-localhost}/airflow
+
+  hadoop-namenode:
+    ports: []   # accès via gateway /hdfs/

@@ -142,7 +142,8 @@
     </main>
 
     <script>
-        const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8000/api' : ('http://' + window.location.hostname + ':8000/api');
+        const origin = window.location.origin;
+        const API_URL = (origin && origin.startsWith('http')) ? '/api' : 'http://localhost:8000/api';
         let authToken = localStorage.getItem('ocr_token');
 
         // Check auth

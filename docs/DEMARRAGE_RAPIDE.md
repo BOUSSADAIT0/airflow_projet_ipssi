@@ -38,6 +38,23 @@ L’interface web regroupe **OCR**, **Data Lake / HDFS** et **Analytics** :
 
 Aucune connexion n’est requise pour ouvrir les pages Data Lake et Analytics depuis l’accueil.
 
+**Fichiers traités par le frontend → enregistrés dans le Data Lake (HDFS)**  
+Dès qu’un document est traité par OCR depuis l’interface (upload + extraction), le backend enregistre le résultat :
+- dans **results/** (comme avant) ;
+- et dans le **Data Lake** : **raw/ocr/&lt;date&gt;/&lt;process_id&gt;_&lt;nom_fichier&gt;.json**.  
+
+**Où trouver le fichier dans HDFS ?**
+- **Sur le disque (projet)** : dossier **`hdfs/raw/ocr/<YYYY-MM-DD>/`** (ex. `hdfs/raw/ocr/2026-02-25/`).
+- **Interface Data Lake** : http://localhost → **Data Lake** → zone **raw** → **ocr** → date du jour.
+- **Cluster HDFS** : après avoir lancé **`./scripts/sync_hdfs_to_datalake.sh`**, ouvrir http://localhost:9870 → **Browse** → **/datalake/raw/ocr/**.
+
+**Savoir si le fichier a bien été enregistré dans HDFS**
+- **Dans l’interface** : après un traitement OCR réussi, la page **Résultats** affiche soit *« Enregistré dans le Data Lake (HDFS) »* avec le chemin (ex. `raw/ocr/2026-02-25/xxx_facture.json`), soit *« Non enregistré dans le Data Lake »* avec la raison (ex. Data Lake non monté).
+- **Dans l’API** : la réponse JSON de `POST /api/ocr/extract` contient un objet **`hdfs`** : **`hdfs.saved === true`** et **`hdfs.path`** si c’est enregistré, sinon **`hdfs.saved === false`** et **`hdfs.reason`**.
+
+**Activer ou désactiver l’enregistrement dans HDFS**  
+Variable d’environnement **`SAVE_OCR_TO_HDFS`** (backend) : **`true`** (défaut) pour enregistrer, **`false`** pour ne pas enregistrer. Dans **docker-compose.yml**, ajouter par exemple `SAVE_OCR_TO_HDFS: "false"` dans la section **backend** pour désactiver.
+
 ---
 
 ## 3. Où voir chaque partie (technique) ?

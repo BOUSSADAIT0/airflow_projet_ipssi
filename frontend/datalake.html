@@ -23,7 +23,7 @@
                     <a href="history.html" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded">Historique</a>
                     <a href="datalake.html" class="bg-emerald-600 text-white px-4 py-2 rounded-lg">Data Lake</a>
                     <a href="analytics.html" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded">Analytics</a>
-                    <a href="http://localhost:9870" target="_blank" rel="noopener" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800">
+                    <a href="#" id="navHdfsLink" target="_blank" rel="noopener" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800">
                         <i class="fas fa-database mr-2"></i>HDFS
                     </a>
                     <span id="usernameDisplay" class="text-gray-600 px-2"></span>
@@ -48,8 +48,8 @@
                 <p class="font-semibold text-emerald-800">Interface Web HDFS (NameNode)</p>
                 <p class="text-sm text-emerald-700">Parcourir le cluster HDFS et le datalake (<code>/datalake</code>)</p>
             </div>
-            <a href="http://localhost:9870" target="_blank" rel="noopener" class="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 inline-flex items-center gap-2">
-                <i class="fas fa-external-link-alt"></i> Ouvrir HDFS (port 9870)
+            <a href="#" id="mainHdfsLink" target="_blank" rel="noopener" class="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 inline-flex items-center gap-2">
+                <i class="fas fa-external-link-alt"></i> Ouvrir HDFS
             </a>
         </div>
 
@@ -95,8 +95,13 @@
     </main>
 
     <script>
-        const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8000' : ('http://' + window.location.hostname + ':8000');
+        // Même frontend Docker : appels API en relatif (/api/...) pour passer par nginx → backend
+        const origin = window.location.origin;
+        const API_BASE = (origin && origin.startsWith('http')) ? '' : 'http://localhost:8000';
+        const HDFS_URL = (origin && origin.startsWith('http')) ? '/hdfs/' : 'http://localhost:9870';
         let selectedDatalakeFile = null;
+        document.getElementById('navHdfsLink').href = HDFS_URL;
+        document.getElementById('mainHdfsLink').href = HDFS_URL;
 
         document.getElementById('usernameDisplay').textContent = localStorage.getItem('ocr_user') ? `(${localStorage.getItem('ocr_user')})` : '';
 
@@ -135,7 +140,7 @@
             try {
                 const form = new FormData();
                 form.append('file', selectedDatalakeFile);
-                const r = await fetch(API_BASE + '/api/datalake/upload', { method: 'POST', body: form });
+                const r = await fetch((API_BASE || '') + '/api/datalake/upload', { method: 'POST', body: form });
                 const data = await r.json().catch(() => ({}));
                 if (!r.ok) {
                     resultEl.classList.add('bg-red-50');
@@ -175,7 +180,7 @@
             err.classList.add('hidden');
             tree.classList.add('hidden');
             try {
-                const r = await fetch(API_BASE + '/api/datalake/structure');
+                const r = await fetch((API_BASE || '') + '/api/datalake/structure');
                 const data = await r.json();
                 loading.classList.add('hidden');
                 if (data.message && !data.zones) {

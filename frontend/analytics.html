@@ -24,7 +24,7 @@
                     <a href="history.html" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded">Historique</a>
                     <a href="datalake.html" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded">Data Lake</a>
                     <a href="analytics.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Analytics</a>
-                    <a href="http://localhost:9870" target="_blank" rel="noopener" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800">
+                    <a href="/hdfs/" target="_blank" rel="noopener" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800">
                         <i class="fas fa-database mr-2"></i>HDFS
                     </a>
                     <span id="usernameDisplay" class="text-gray-600 px-2"></span>
@@ -58,6 +58,9 @@
         <div id="analyticsError" class="hidden bg-red-50 border border-red-200 rounded-lg p-4 text-red-800 mb-6"></div>
 
         <div id="analyticsContent" class="hidden">
+            <div id="analyticsDemoBanner" class="hidden mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+                <i class="fas fa-info-circle mr-2"></i> Données de démonstration. Pour des données réelles, exécutez les DAGs Airflow <em>multi_source_ingestion_factures</em> puis <em>batch_analytics_factures</em>.
+            </div>
             <!-- Cartes résumé -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500">
@@ -92,21 +95,38 @@
     </main>
 
     <script>
-        const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8000' : ('http://' + window.location.hostname + ':8000');
+        const origin = window.location.origin;
+        const API_BASE = (origin && origin.startsWith('http')) ? '' : 'http://localhost:8000';
         let chartRegion, chartCountry, chartPayment;
 
         document.getElementById('usernameDisplay').textContent = localStorage.getItem('ocr_user') ? `(${localStorage.getItem('ocr_user')})` : '';
 
+        function getDemoData() {
+            return {
+                date: new Date().toISOString().slice(0, 10),
+                total_factures: 1250,
+                montant_ttc_total: 187540.50,
+                montant_ht_total: 156283.75,
+                by_country: { FR: { count: 420, montant_ttc_sum: 62800.20 }, DE: { count: 310, montant_ttc_sum: 46520.10 }, ES: { count: 280, montant_ttc_sum: 42100.80 }, IT: { count: 240, montant_ttc_sum: 36119.40 } },
+                by_region: { Europe: { count: 1250, montant_ttc_sum: 187540.50 }, "Western Europe": { count: 850, montant_ttc_sum: 127540.20 } },
+                by_payment: { CB: { count: 520, montant_ttc_sum: 78020 }, VIREMENT: { count: 380, montant_ttc_sum: 57100.50 }, PAYPAL: { count: 250, montant_ttc_sum: 37500.25 }, CHEQUE: { count: 100, montant_ttc_sum: 14920 } },
+                _demo: true
+            };
+        }
+
         async function loadDates() {
             try {
-                const r = await fetch(API_BASE + '/api/analytics/dates');
+                const r = await fetch((API_BASE || '') + '/api/analytics/dates');
                 const data = await r.json();
                 const sel = document.getElementById('analyticsDate');
                 sel.innerHTML = (data.dates || []).map(d => '<option value="' + d + '">' + d + '</option>').join('') || '<option value="">Aucune date</option>';
                 if (sel.options.length) sel.selectedIndex = 0;
                 return data.dates && data.dates[0];
             } catch (e) {
-                return null;
+                var sel = document.getElementById('analyticsDate');
+                var today = new Date().toISOString().slice(0, 10);
+                sel.innerHTML = '<option value="' + today + '">' + today + '</option>';
+                return today;
             }
         }
 
@@ -123,7 +143,8 @@
             content.classList.add('hidden');
             const date = getSelectedDate();
             try {
-                const r = await fetch(API_BASE + '/api/analytics/summary' + (date ? '?date=' + encodeURIComponent(date) : ''));
+                const r = await fetch((API_BASE || '') + '/api/analytics/summary' + (date ? '?date=' + encodeURIComponent(date) : ''));
+                if (!r.ok) throw new Error('API ' + r.status);
                 const data = await r.json();
                 loading.classList.add('hidden');
                 if (data.message && data.dates && !data.total_factures && data.total_factures !== 0) {
@@ -136,12 +157,25 @@
                 document.getElementById('cardTotalFactures').textContent = (data.total_factures || 0).toLocaleString('fr-FR');
                 document.getElementById('cardMontantTTC').textContent = (data.montant_ttc_total != null ? data.montant_ttc_total : 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €';
                 document.getElementById('cardMontantHT').textContent = (data.montant_ht_total != null ? data.montant_ht_total : 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €';
+                var demoBanner = document.getElementById('analyticsDemoBanner');
+                if (demoBanner) demoBanner.classList.toggle('hidden', !data._demo);
                 updateCharts(data);
                 content.classList.remove('hidden');
             } catch (e) {
                 loading.classList.add('hidden');
-                err.textContent = e.message;
+                err.innerHTML = '<strong>Erreur API (NetworkError ou backend indisponible).</strong><br>' +
+                    '• Ouvrez la page depuis <a href="/" class="underline font-medium">http://' + (window.location.hostname || 'localhost') + '/</a> (pas en file://).<br>' +
+                    '• Vérifiez que le backend tourne : <code>docker-compose up -d backend</code>.<br>' +
+                    'Données de démonstration affichées ci-dessous.';
                 err.classList.remove('hidden');
+                var demoData = getDemoData();
+                document.getElementById('cardTotalFactures').textContent = (demoData.total_factures || 0).toLocaleString('fr-FR');
+                document.getElementById('cardMontantTTC').textContent = (demoData.montant_ttc_total || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €';
+                document.getElementById('cardMontantHT').textContent = (demoData.montant_ht_total || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €';
+                var demoBanner = document.getElementById('analyticsDemoBanner');
+                if (demoBanner) { demoBanner.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>API injoignable – données de démonstration affichées.'; demoBanner.classList.remove('hidden'); }
+                updateCharts(demoData);
+                content.classList.remove('hidden');
             }
         }
 

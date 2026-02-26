@@ -113,6 +113,7 @@
                     <p class="text-lg font-bold" id="resPages"></p>
                 </div>
             </div>
+            <div id="resHdfsStatus" class="hidden mb-6 p-4 rounded-lg border"></div>
 
             <div id="structuredDataContainer" class="mb-6 border rounded-lg p-4">
                 <h4 class="font-bold mb-3 text-blue-700"><i class="fas fa-database mr-2"></i>Données structurées</h4>
@@ -145,7 +146,8 @@
     </main>
 
     <script>
-        const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8000/api' : ('http://' + window.location.hostname + ':8000/api');
+        const origin = window.location.origin;
+        const API_URL = (origin && origin.startsWith('http')) ? '/api' : 'http://localhost:8000/api';
         let authToken = localStorage.getItem('ocr_token');
         let currentFile = null;
         let currentProcessId = null;
@@ -259,6 +261,20 @@
             document.getElementById('resConfidence').textContent = `${(data.average_confidence * 100).toFixed(1)}%`;
             document.getElementById('resPages').textContent = data.total_pages;
             document.getElementById('rawText').textContent = data.text || 'Aucun texte extrait';
+
+            var hdfsEl = document.getElementById('resHdfsStatus');
+            if (data.hdfs) {
+                hdfsEl.classList.remove('hidden');
+                if (data.hdfs.saved) {
+                    hdfsEl.className = 'mb-6 p-4 rounded-lg border bg-emerald-50 border-emerald-200';
+                    hdfsEl.innerHTML = '<strong><i class="fas fa-database text-emerald-600 mr-2"></i>Enregistré dans le Data Lake (HDFS)</strong><br><code class="text-sm mt-1 block">' + (data.hdfs.path || '') + '</code><br><span class="text-sm text-gray-600">Visible dans la page Data Lake → raw → ocr. Synchronisation cluster : <code>./scripts/sync_hdfs_to_datalake.sh</code></span>';
+                } else {
+                    hdfsEl.className = 'mb-6 p-4 rounded-lg border bg-amber-50 border-amber-200';
+                    hdfsEl.innerHTML = '<strong><i class="fas fa-exclamation-triangle text-amber-600 mr-2"></i>Non enregistré dans le Data Lake</strong><br><span class="text-sm">' + (data.hdfs.reason || 'Raison inconnue') + '</span>';
+                }
+            } else {
+                hdfsEl.classList.add('hidden');
+            }
 
             // Display structured data
             const structuredData = data.structured_data || {};

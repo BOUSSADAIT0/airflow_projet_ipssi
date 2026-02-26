@@ -1,0 +1,46 @@
+{
+  "success": true,
+  "process_id": "f6353f80-7d94-462d-8c82-cf4eb32e08e0",
+  "filename": "fac.png",
+  "document_type": "invoice",
+  "total_pages": 1,
+  "text": "Facture\n\nMon Entreprise\n\n22. Avenue Voitare\n13000 Marseite\n\nMichel Acheteur\n\n31, rue de la Forêt\n13100 Aix-en-Provence\n\nDate de facturation Numéro de facture Echéance Référence\n2.6.2021 143 46.6.2021 7438\n\nInformations additionnelles :\nService Après Vente : Garantie 1 an.\n\nED GD GED GD ane\n\n60.00 € 20% 60,00 € 360,00 €\n\n105,00 € 20% 210.00 € 1200.00 €\nTotal HT 1350,00 €\nTotal TVA 270,00 €\n\nTotal TTC 1 620,00 €\n\nMon Entreprise Coordonnées Dstaits bancaires\n\n22. Avenue Vottaire Pierre Fournisseur Eanque WP PDA\n\n13000 Marseshe Téléphone : 433 4 92 99 99 99 en FR23 4112 4096 4098 23\nN° Siren ou Siret : 1234567-8 E-mall: pere @macompagréer CP FRHHCIN1001\n\nN° TVA Intra, : FRXX 999999999 Se macompagnie.oom\n",
+  "pages": [
+    {
+      "page": 1,
+      "text": "Facture\n\nMon Entreprise\n\n22. Avenue Voitare\n13000 Marseite\n\nMichel Acheteur\n\n31, rue de la Forêt\n13100 Aix-en-Provence\n\nDate de facturation Numéro de facture Echéance Référence\n2.6.2021 143 46.6.2021 7438\n\nInformations additionnelles :\nService Après Vente : Garantie 1 an.\n\nED GD GED GD ane\n\n60.00 € 20% 60,00 € 360,00 €\n\n105,00 € 20% 210.00 € 1200.00 €\nTotal HT 1350,00 €\nTotal TVA 270,00 €\n\nTotal TTC 1 620,00 €\n\nMon Entreprise Coordonnées Dstaits bancaires\n\n22. Avenue Vottaire Pierre Fournisseur Eanque WP PDA\n\n13000 Marseshe Téléphone : 433 4 92 99 99 99 en FR23 4112 4096 4098 23\nN° Siren ou Siret : 1234567-8 E-mall: pere @macompagréer CP FRHHCIN1001\n\nN° TVA Intra, : FRXX 999999999 Se macompagnie.oom\n",
+      "confidence": 0.7629661016949153,
+      "word_count": 119
+    }
+  ],
+  "personal_info": {
+    "names": [],
+    "emails": [],
+    "phones": [],
+    "dates": [],
+    "addresses": [],
+    "amounts": [
+      "6.20",
+      "270,00 €",
+      "620,00 €",
+      "1350,00 €",
+      "210.00 €",
+      "60.00 €",
+      "60,00 €",
+      "105,00 €",
+      "360,00 €",
+      "1200.00 €"
+    ]
+  },
+  "structured_data": {
+    "type": "Invoice",
+    "invoice_number": "Mon",
+    "date": null,
+    "total_amount": 1350.0,
+    "tax_amount": 60.0,
+    "vendor_name": null
+  },
+  "average_confidence": 0.7629661016949153,
+  "processing_date": "2026-02-26T00:46:52.831507",
+  "user": "aitdjoudi@gmail.com"
+}

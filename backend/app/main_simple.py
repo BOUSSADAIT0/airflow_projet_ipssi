@@ -19,6 +19,39 @@ import subprocess
 from app.services.image_processing import preprocess_image
 from app.services.extraction import extract_structured_data
 
+# Base du Data Lake (monté en Docker : ./hdfs -> /app/data/hdfs)
+HDFS_BASE = os.environ.get("HDFS_BASE", "/app/data/hdfs")
+# Activer/désactiver l'enregistrement des résultats OCR dans le Data Lake (true/false)
+SAVE_OCR_TO_HDFS = os.environ.get("SAVE_OCR_TO_HDFS", "true").lower() in ("1", "true", "yes")
+
+
+def _save_ocr_result_to_hdfs(result: dict, process_id: str, original_filename: str) -> dict:
+    """
+    Enregistre le résultat OCR dans le Data Lake (zone raw/ocr) pour stockage HDFS.
+    Retourne {"saved": True, "path": "raw/ocr/YYYY-MM-DD/..."} ou {"saved": False, "reason": "..."}.
+    """
+    if not SAVE_OCR_TO_HDFS:
+        return {"saved": False, "reason": "SAVE_OCR_TO_HDFS désactivé"}
+    if not HDFS_BASE or not os.path.exists(HDFS_BASE):
+        return {"saved": False, "reason": "Data Lake non monté (HDFS_BASE absent)"}
+    try:
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        target_dir = os.path.join(HDFS_BASE, "raw", "ocr", date_str)
+        os.makedirs(target_dir, exist_ok=True)
+        safe_name = "".join(c if c.isalnum() or c in "._-" else "_" for c in original_filename)
+        if not safe_name.strip():
+            safe_name = "document"
+        name_base = safe_name.rsplit(".", 1)[0] if "." in safe_name else safe_name
+        out_name = f"{process_id}_{name_base}.json"
+        out_path = os.path.join(target_dir, out_name)
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=2, ensure_ascii=False)
+        relative_path = f"raw/ocr/{date_str}/{out_name}"
+        return {"saved": True, "path": relative_path, "full_path": out_path}
+    except Exception as e:
+        return {"saved": False, "reason": str(e)}
+
+
 app = FastAPI(
     title="OCR Intelligent API",
     version="1.0.0",
@@ -33,6 +66,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Routes Data Lake et Analytics (pour le frontend Docker)
+from app.api.analytics import router as analytics_router
+from app.api.datalake import router as datalake_router
+app.include_router(analytics_router)
+app.include_router(datalake_router)
 
 # Configuration
 SECRET_KEY = "ocr-intelligent-secret-key-2024"
@@ -417,7 +456,11 @@ async def extract_ocr(
         os.makedirs("results", exist_ok=True)
         with open(f"results/{process_id}.json", "w", encoding="utf-8") as f:
             json.dump(result, f, indent=2, ensure_ascii=False)
-        
+
+        # Enregistrer aussi dans le Data Lake (HDFS) pour stockage distribué
+        hdfs_status = _save_ocr_result_to_hdfs(result, process_id, file.filename or "document")
+        result["hdfs"] = hdfs_status  # pour savoir si enregistré dans HDFS et où
+
         return result
         
     except HTTPException:
