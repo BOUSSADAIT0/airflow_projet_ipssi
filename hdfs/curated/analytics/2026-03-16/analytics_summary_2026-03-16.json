@@ -1,0 +1,52 @@
+{
+  "date": "2026-03-16",
+  "total_factures": 1000,
+  "montant_ttc_total": 40672359462.39,
+  "montant_ht_total": 33893632885.3,
+  "by_country": {
+    "DE": {
+      "count": 265,
+      "montant_ttc_sum": 7481350051.55,
+      "montant_ht_sum": 6234458376.28
+    },
+    "IT": {
+      "count": 264,
+      "montant_ttc_sum": 16520738269.73,
+      "montant_ht_sum": 13767281891.45
+    },
+    "ES": {
+      "count": 237,
+      "montant_ttc_sum": 6671954631.7,
+      "montant_ht_sum": 5559962193.09
+    },
+    "FR": {
+      "count": 234,
+      "montant_ttc_sum": 9998316509.41,
+      "montant_ht_sum": 8331930424.48
+    }
+  },
+  "by_region": {
+    "Europe": {
+      "count": 1000,
+      "montant_ttc_sum": 40672359462.39
+    }
+  },
+  "by_payment": {
+    "CHEQUE": {
+      "count": 251,
+      "montant_ttc_sum": 10009639346.31
+    },
+    "PAYPAL": {
+      "count": 272,
+      "montant_ttc_sum": 11371875974.85
+    },
+    "VIREMENT": {
+      "count": 231,
+      "montant_ttc_sum": 8797335460.02
+    },
+    "CB": {
+      "count": 246,
+      "montant_ttc_sum": 10493508681.21
+    }
+  }
+}
